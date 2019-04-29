@@ -1,28 +1,29 @@
 class RollingWindow
   attr_reader :redis
 
+  STRFTIME = {
+      second: '%S',
+      minute: '%M',
+      hour: '%H'
+  }
+
+  EXPIRATION = {
+      second: 60,
+      minute: 60*60,
+      hour: 60*60*24
+  }
+
   def initialize(redis)
     @redis = redis
   end
 
   def register(user_id)
-    time_precission = {current_second: Time.now.strftime('%S').to_i,
-                       current_minute: Time.now.strftime('%M').to_i,
-                       current_hour: Time.now.strftime('%H').to_i}
-
-    time_precission[:current_user_second] = "user:#{user_id}:second:#{time_precission[:current_second]}"
-    result = redis.eval(lua_set_or_inc(60), :keys => [time_precission[:current_user_second]])
-    time_precission[:counter_second] = get_time_counter(result)
-
-    time_precission[:current_user_minute] = "user:#{user_id}:minute:#{time_precission[:current_minute]}"
-    result = redis.eval(lua_set_or_inc(60*60), :keys => [time_precission[:current_user_minute]])
-    time_precission[:counter_minute] = get_time_counter(result)
-
-    time_precission[:current_user_hour] = "user:#{user_id}:hour:#{time_precission[:current_hour]}"
-    result = redis.eval(lua_set_or_inc(60*60*24), :keys => [time_precission[:current_user_hour]])
-    time_precission[:counter_hour] = get_time_counter(result)
-
-    time_precission
+    time_now = Time.now
+    [:second, :minute, :hour].each_with_object({}) do |precision, result|
+      result["current_#{precision}".to_sym] = extract_time(time_now, precision)
+      result["current_user_#{precision}".to_sym] = user_redis_key(user_id, time_now, precision)
+      result["counter_#{precision}".to_sym] = incr(user_id, time_now, precision)
+    end
   end
 
   def sum_last_x_seconds(user_id, seconds_back, current_second=Time.now.strftime('%S').to_i)
@@ -43,6 +44,19 @@ class RollingWindow
 
   private
 
+  def incr(user_id, time_now, time_precision)
+    result = redis.eval(lua_set_or_inc(EXPIRATION.fetch(time_precision)), :keys => [user_redis_key(user_id, time_now, time_precision)])
+    get_time_counter(result)
+  end
+
+  def user_redis_key(user_id, time_now, time_precision)
+    "user:#{user_id}:#{time_precision}:#{extract_time(time_now, time_precision)}"
+  end
+
+  def extract_time(time_now, precision)
+    time_now.strftime(STRFTIME.fetch(precision)).to_i
+  end
+
   def get_last_second(start:, finish:)
     finish += 60 if finish < start
     finish - start
@@ -51,6 +65,7 @@ class RollingWindow
   def seconds_range(finish_second:, seconds_back: )
     (0..seconds_back).map {|s| (finish_second-=1) + 1 }.sort.map {|i| i < 0 ? i + 60 : i}
   end
+
 
   def get_time_counter(result)
     result == 'OK' ? 1 : result.to_i
