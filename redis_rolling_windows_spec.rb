@@ -8,23 +8,23 @@ $redis_store_obj = Redis.new
 puts 'started'
 
 def incr_time_precisions(user_id)
-  time_precissions = {time_second: Time.now.strftime('%S').to_i,
-                      time_minute: Time.now.strftime('%M').to_i,
-                      time_hour: Time.now.strftime('%H').to_i}
+  time_precission = {current_second: Time.now.strftime('%S').to_i,
+                      current_minute: Time.now.strftime('%M').to_i,
+                      current_hour: Time.now.strftime('%H').to_i}
 
-  time_precissions[:time_second_key] = "user:#{user_id}:second:#{time_precissions[:time_second]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60), :keys => [time_precissions[:time_second_key]])
-  time_precissions[:counter_second] = get_time_counter(result)
+  time_precission[:current_user_second] = "user:#{user_id}:second:#{time_precission[:current_second]}"
+  result = $redis_store_obj.eval(lua_set_or_inc(60), :keys => [time_precission[:current_user_second]])
+  time_precission[:counter_second] = get_time_counter(result)
 
-  time_precissions[:time_minute_key] = "user:#{user_id}:minute:#{time_precissions[:time_minute]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60*60), :keys => [time_precissions[:time_minute_key]])
-  time_precissions[:counter_minute] = get_time_counter(result)
+  time_precission[:current_user_minute] = "user:#{user_id}:minute:#{time_precission[:current_minute]}"
+  result = $redis_store_obj.eval(lua_set_or_inc(60*60), :keys => [time_precission[:current_user_minute]])
+  time_precission[:counter_minute] = get_time_counter(result)
 
-  time_precissions[:time_hour_key] = "user:#{user_id}:hour:#{time_precissions[:time_hour]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60*60*24), :keys => [time_precissions[:time_hour_key]])
-  time_precissions[:counter_hour] = get_time_counter(result)
+  time_precission[:current_user_hour] = "user:#{user_id}:hour:#{time_precission[:current_hour]}"
+  result = $redis_store_obj.eval(lua_set_or_inc(60*60*24), :keys => [time_precission[:current_user_hour]])
+  time_precission[:counter_hour] = get_time_counter(result)
 
-  time_precissions
+  time_precission
 end
 
 def get_time_counter(result)
@@ -59,10 +59,10 @@ def send_stats_every_second_for_x_seconds_to_user(seconds, user_id)
   result = []
   result << incr_time_precisions(user_id)
   seconds.times{ |i| sleep 0.5;result << incr_time_precisions(user_id) }
-  # we sum the last value of each :time_second_key
-  total_sum = result.group_by {|h| h[:time_second]}.map {|a|a.last.last[:counter_second]}.sum
-  time_second_keys = result.map{|h| h[:time_second_key]}
-  [result.first[:time_second],result.last[:time_second],total_sum, time_second_keys.uniq]
+  # we sum the last value of each :current_user_second
+  total_sum = result.group_by {|h| h[:current_second]}.map {|a|a.last.last[:counter_second]}.sum
+  time_second_keys = result.map{|h| h[:current_user_second]}
+  [result.first[:current_second],result.last[:current_second],total_sum, time_second_keys.uniq]
 end
 
 def search_seconds_keys_redis(user_id)
