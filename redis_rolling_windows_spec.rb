@@ -12,8 +12,8 @@ $redis_store_obj = Redis.new
 def send_stats(user_id:, number_of_stats:, sleep_time: )
   result = []
   rolling_window = RollingWindow.new($redis_store_obj, user_id)
-  result << rolling_window.register
-  number_of_stats.times{ |i| sleep sleep_time; result << rolling_window.register }
+  result << rolling_window.incr_counter
+  number_of_stats.times{ |i| sleep sleep_time; result << rolling_window.incr_counter }
   # we sum the last value of each :user_redis_key_per_second
   total_sum = result.group_by {|h| h[:current_second]}.map {|a|a.last.last[:counter_second]}.sum
   time_second_keys = result.map{|h| h[:user_redis_key_per_second]}
@@ -29,6 +29,34 @@ def search_seconds_keys_redis(user_id)
 end
 
 RSpec.describe "Rolling windows in Redis" do
+  let(:user_id) { 12345 }
+  context 'no stats' do
+    before { $redis_store_obj.flushall }
+  end
+
+  it 'returns 0' do
+    output = RollingWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
+    expect(output[:total]).to eq(0)
+    expect(output[:redis_keys_used]).to be_empty
+  end
+
+
+  context "expired stats" do
+    let(:user_id) { 12345 }
+    before do
+      $redis_store_obj.flushall
+      @start_second, @finish_second, @total_count, @redis_keys_used = send_stats(user_id: user_id, number_of_stats: 13, sleep_time: 0.2 )
+      sleep 60
+      # 12.times { sleep 5; puts '# redis stats';search_seconds_keys_redis(user_id); '# END'}
+    end
+
+    it 'returns 0' do
+      output = RollingWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
+      expect(output[:total]).to eq(0)
+      expect(output[:redis_keys_used]).to be_empty
+    end
+  end
+
   context "Send stats every 0.2 seconds" do
     before do
       $redis_store_obj.flushall

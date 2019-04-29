@@ -18,7 +18,7 @@ class RollingWindow
     @user_id = user_id
   end
 
-  def register
+  def incr_counter
     @time_now = Time.now
     [:second, :minute, :hour].each_with_object({}) do |precision, result|
       result["current_#{precision}".to_sym] = extract_time(precision)
