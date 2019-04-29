@@ -25,7 +25,32 @@ class RollingWindow
     time_precission
   end
 
+  def sum_last_x_seconds(user_id, seconds_back, current_second=Time.now.strftime('%S').to_i)
+    seconds_range(finish_second: current_second, seconds_back: seconds_back ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
+      key = "user:#{user_id}:second:#{second}"
+      value = $redis_store_obj.get(key).to_i
+      puts "#{key} #{value}" if value > 0
+      hash[:user_second_keys] << key if value > 0
+      hash[:user_second_keys].uniq!
+      hash[:total] += value
+    end
+  end
+
+  def sum_seconds_range(user_id, start, finish)
+    last_second = get_last_second(start: start, finish: finish)
+    sum_last_x_seconds(user_id, last_second, finish)
+  end
+
   private
+
+  def get_last_second(start:, finish:)
+    finish += 60 if finish < start
+    finish - start
+  end
+
+  def seconds_range(finish_second:, seconds_back: )
+    (0..seconds_back).map {|s| (finish_second-=1) + 1 }.sort.map {|i| i < 0 ? i + 60 : i}
+  end
 
   def get_time_counter(result)
     result == 'OK' ? 1 : result.to_i
