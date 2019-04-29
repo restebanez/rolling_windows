@@ -24,6 +24,16 @@ class RollingWindow
 
     time_precission
   end
+
+  private
+
+  def get_time_counter(result)
+    result == 'OK' ? 1 : result.to_i
+  end
+
+  def lua_set_or_inc(seconds_to_expire)
+    "return redis.call('set',KEYS[1], 1,'EX', #{seconds_to_expire}, 'NX') or redis.call('incr', KEYS[1])"
+  end
 end
 
 

@@ -9,16 +9,10 @@ require_relative 'rolling_window'
 $redis_store_obj = Redis.new
 
 
-def get_time_counter(result)
-  result == 'OK' ? 1 : result.to_i
-end
 
-def lua_set_or_inc(seconds_to_expire)
-  "return redis.call('set',KEYS[1], 1,'EX', #{seconds_to_expire}, 'NX') or redis.call('incr', KEYS[1])"
-end
 
 def sum_last_x_seconds(user_id, last_seconds, current_second=Time.now.strftime('%S').to_i)
-  seconds_range(end_second: current_second, seconds_back: last_seconds ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
+  seconds_range(finish_second: current_second, seconds_back: last_seconds ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
     key = "user:#{user_id}:second:#{second}"
     value = $redis_store_obj.get(key).to_i
     puts "#{key} #{value}" if value > 0
@@ -28,8 +22,8 @@ def sum_last_x_seconds(user_id, last_seconds, current_second=Time.now.strftime('
   end
 end
 
-def seconds_range(end_second:, seconds_back: )
-  (0..seconds_back).map {|s| (end_second-=1) + 1 }.sort.map {|i| i < 0 ? i + 60 : i}
+def seconds_range(finish_second:, seconds_back: )
+  (0..seconds_back).map {|s| (finish_second-=1) + 1 }.sort.map {|i| i < 0 ? i + 60 : i}
 end
 
 def get_last_seconds(start:, finish:)
@@ -60,18 +54,18 @@ RSpec.describe "Rolling windows in Redis" do
   before do
     $redis_store_obj.flushall
     @user_id = 10360
-    @start_second, @end_second, @total_count, @user_second_keys = send_stats_every_second_for_x_seconds_to_user(5, @user_id)
+    @start_second, @finish_second, @total_count, @user_second_keys = send_stats_every_second_for_x_seconds_to_user(5, @user_id)
   end
 
   it "sums all the key's values of the last seconds" do
-    puts "start: #{@start_second}, end: #{@end_second}"
+    puts "start: #{@start_second}, end: #{@finish_second}"
     puts @user_second_keys.inspect
-    total_sum_in_search_redis = search_seconds_keys_redis(@user_id)
+    total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
     puts '------'
-    last_seconds = get_last_seconds(start: @start_second, finish: @end_second)
-    output = sum_last_x_seconds(@user_id, last_seconds, @end_second)
+    last_seconds = get_last_seconds(start: @start_second, finish: @finish_second)
+    output = sum_last_x_seconds(@user_id, last_seconds, @finish_second)
     expect(output[:total]).to eq(@total_count)
-    expect(output[:total]).to eq(total_sum_in_search_redis)
+    expect(output[:total]).to eq(total_sum_in_redis_search)
     expect(output[:user_second_keys]).to eq(@user_second_keys)
   end
 end
