@@ -29,20 +29,57 @@ def search_seconds_keys_redis(user_id)
 end
 
 RSpec.describe "Rolling windows in Redis" do
-  before do
-    $redis_store_obj.flushall
-    @user_id = 10360
-    @start_second, @finish_second, @total_count, @user_second_keys = send_stats(user_id: @user_id, number_of_stats: 5,sleep_time: 0.5 )
+  context "Send stats every 0.2 seconds" do
+    before do
+      $redis_store_obj.flushall
+      @user_id = 10360
+      @start_second, @finish_second, @total_count, @user_second_keys = send_stats(user_id: @user_id, number_of_stats: 13, sleep_time: 0.2 )
+    end
+
+    it "sums all the key's values of the last seconds" do
+      puts "start: #{@start_second}, end: #{@finish_second}"
+      total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
+      puts '------'
+      output = RollingWindow.new($redis_store_obj).sum_seconds_range(@user_id, @start_second, @finish_second)
+      expect(output[:total]).to eq(@total_count)
+      expect(output[:total]).to eq(total_sum_in_redis_search)
+      expect(output[:user_second_keys]).to eq(@user_second_keys)
+    end
   end
 
-  it "sums all the key's values of the last seconds" do
-    puts "start: #{@start_second}, end: #{@finish_second}"
-    puts @user_second_keys.inspect
-    total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
-    puts '------'
-    output = RollingWindow.new($redis_store_obj).sum_seconds_range(@user_id, @start_second, @finish_second)
-    expect(output[:total]).to eq(@total_count)
-    expect(output[:total]).to eq(total_sum_in_redis_search)
-    expect(output[:user_second_keys]).to eq(@user_second_keys)
+  context "Send stats every 0.5 seconds" do
+    before do
+      $redis_store_obj.flushall
+      @user_id = 10361
+      @start_second, @finish_second, @total_count, @user_second_keys = send_stats(user_id: @user_id, number_of_stats: 5, sleep_time: 0.5 )
+    end
+
+    it "sums all the key's values of the last seconds" do
+      puts "start: #{@start_second}, end: #{@finish_second}"
+      total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
+      puts '------'
+      output = RollingWindow.new($redis_store_obj).sum_seconds_range(@user_id, @start_second, @finish_second)
+      expect(output[:total]).to eq(@total_count)
+      expect(output[:total]).to eq(total_sum_in_redis_search)
+      expect(output[:user_second_keys]).to eq(@user_second_keys)
+    end
+  end
+
+  context "Send stats every 2 seconds" do
+    before do
+      $redis_store_obj.flushall
+      @user_id = 10362
+      @start_second, @finish_second, @total_count, @user_second_keys = send_stats(user_id: @user_id, number_of_stats: 5, sleep_time: 2 )
+    end
+
+    it "sums all the key's values of the last seconds" do
+      puts "start: #{@start_second}, end: #{@finish_second}"
+      total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
+      puts '------'
+      output = RollingWindow.new($redis_store_obj).sum_seconds_range(@user_id, @start_second, @finish_second)
+      expect(output[:total]).to eq(@total_count)
+      expect(output[:total]).to eq(total_sum_in_redis_search)
+      expect(output[:user_second_keys]).to eq(@user_second_keys)
+    end
   end
 end
