@@ -30,7 +30,7 @@ class RollingWindow
   def sum_last_x_seconds(seconds_back, current_second=Time.now.strftime('%S').to_i)
     seconds_range(finish_second: current_second, seconds_back: seconds_back ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
       key = "user:#{user_id}:second:#{second}"
-      value = $redis_store_obj.get(key).to_i
+      value = redis.get(key).to_i
       puts "#{key} #{value}" if value > 0
       hash[:user_second_keys] << key if value > 0
       hash[:user_second_keys].uniq!
