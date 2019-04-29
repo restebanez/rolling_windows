@@ -1,5 +1,5 @@
 class RollingWindow
-  attr_reader :redis, :user_id
+  attr_reader :redis, :user_id, :time_now
 
   STRFTIME = {
       second: '%S',
@@ -19,11 +19,11 @@ class RollingWindow
   end
 
   def register
-    time_now = Time.now
+    @time_now = Time.now
     [:second, :minute, :hour].each_with_object({}) do |precision, result|
-      result["current_#{precision}".to_sym] = extract_time(time_now, precision)
-      result["user_redis_key_per_#{precision}".to_sym] = user_redis_key(time_now, precision)
-      result["counter_#{precision}".to_sym] = incr(time_now, precision)
+      result["current_#{precision}".to_sym] = extract_time(precision)
+      result["user_redis_key_per_#{precision}".to_sym] = user_redis_key(precision)
+      result["counter_#{precision}".to_sym] = incr(precision)
     end
   end
 
@@ -45,16 +45,16 @@ class RollingWindow
 
   private
 
-  def incr(time_now, time_precision)
-    result = redis.eval(lua_set_or_inc(EXPIRATION.fetch(time_precision)), :keys => [user_redis_key(time_now, time_precision)])
+  def incr(time_precision)
+    result = redis.eval(lua_set_or_inc(EXPIRATION.fetch(time_precision)), :keys => [user_redis_key(time_precision)])
     get_time_counter(result)
   end
 
-  def user_redis_key(time_now, time_precision)
-    "user:#{user_id}:#{time_precision}:#{extract_time(time_now, time_precision)}"
+  def user_redis_key(time_precision)
+    "user:#{user_id}:#{time_precision}:#{extract_time(time_precision)}"
   end
 
-  def extract_time(time_now, precision)
+  def extract_time(precision)
     time_now.strftime(STRFTIME.fetch(precision)).to_i
   end
 
