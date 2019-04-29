@@ -1,5 +1,5 @@
 class RollingWindow
-  attr_reader :redis
+  attr_reader :redis, :user_id
 
   STRFTIME = {
       second: '%S',
@@ -13,20 +13,21 @@ class RollingWindow
       hour: 60*60*24
   }
 
-  def initialize(redis)
+  def initialize(redis, user_id)
     @redis = redis
+    @user_id = user_id
   end
 
-  def register(user_id)
+  def register
     time_now = Time.now
     [:second, :minute, :hour].each_with_object({}) do |precision, result|
       result["current_#{precision}".to_sym] = extract_time(time_now, precision)
-      result["user_redis_key_per_#{precision}".to_sym] = user_redis_key(user_id, time_now, precision)
-      result["counter_#{precision}".to_sym] = incr(user_id, time_now, precision)
+      result["user_redis_key_per_#{precision}".to_sym] = user_redis_key(time_now, precision)
+      result["counter_#{precision}".to_sym] = incr(time_now, precision)
     end
   end
 
-  def sum_last_x_seconds(user_id, seconds_back, current_second=Time.now.strftime('%S').to_i)
+  def sum_last_x_seconds(seconds_back, current_second=Time.now.strftime('%S').to_i)
     seconds_range(finish_second: current_second, seconds_back: seconds_back ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
       key = "user:#{user_id}:second:#{second}"
       value = $redis_store_obj.get(key).to_i
@@ -37,19 +38,19 @@ class RollingWindow
     end
   end
 
-  def sum_seconds_range(user_id, start, finish)
+  def sum_seconds_range(start, finish)
     last_second = get_last_second(start: start, finish: finish)
-    sum_last_x_seconds(user_id, last_second, finish)
+    sum_last_x_seconds(last_second, finish)
   end
 
   private
 
-  def incr(user_id, time_now, time_precision)
-    result = redis.eval(lua_set_or_inc(EXPIRATION.fetch(time_precision)), :keys => [user_redis_key(user_id, time_now, time_precision)])
+  def incr(time_now, time_precision)
+    result = redis.eval(lua_set_or_inc(EXPIRATION.fetch(time_precision)), :keys => [user_redis_key(time_now, time_precision)])
     get_time_counter(result)
   end
 
-  def user_redis_key(user_id, time_now, time_precision)
+  def user_redis_key(time_now, time_precision)
     "user:#{user_id}:#{time_precision}:#{extract_time(time_now, time_precision)}"
   end
 
