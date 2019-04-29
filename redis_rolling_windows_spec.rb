@@ -18,12 +18,12 @@ def lua_set_or_inc(seconds_to_expire)
 end
 
 def sum_last_x_seconds(user_id, last_seconds, current_second=Time.now.strftime('%S').to_i)
-  seconds_range(end_second: current_second, seconds_back: last_seconds ).each_with_object({total: 0, time_second_keys: []}) do |second, hash|
+  seconds_range(end_second: current_second, seconds_back: last_seconds ).each_with_object({total: 0, user_second_keys: []}) do |second, hash|
     key = "user:#{user_id}:second:#{second}"
     value = $redis_store_obj.get(key).to_i
     puts "#{key} #{value}" if value > 0
-    hash[:time_second_keys] << key if value > 0
-    hash[:time_second_keys].uniq!
+    hash[:user_second_keys] << key if value > 0
+    hash[:user_second_keys].uniq!
     hash[:total] += value
   end
 end
@@ -60,18 +60,18 @@ RSpec.describe "Rolling windows in Redis" do
   before do
     $redis_store_obj.flushall
     @user_id = 10360
-    @start_second, @end_second, @total_count, @time_second_keys = send_stats_every_second_for_x_seconds_to_user(5, @user_id)
+    @start_second, @end_second, @total_count, @user_second_keys = send_stats_every_second_for_x_seconds_to_user(5, @user_id)
   end
 
   it "sums all the key's values of the last seconds" do
     puts "start: #{@start_second}, end: #{@end_second}"
-    puts @time_second_keys.inspect
+    puts @user_second_keys.inspect
     total_sum_in_search_redis = search_seconds_keys_redis(@user_id)
     puts '------'
     last_seconds = get_last_seconds(start: @start_second, finish: @end_second)
     output = sum_last_x_seconds(@user_id, last_seconds, @end_second)
     expect(output[:total]).to eq(@total_count)
     expect(output[:total]).to eq(total_sum_in_search_redis)
-    expect(output[:time_second_keys]).to eq(@time_second_keys)
+    expect(output[:user_second_keys]).to eq(@user_second_keys)
   end
 end
