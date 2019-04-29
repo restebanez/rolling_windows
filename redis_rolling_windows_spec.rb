@@ -2,30 +2,12 @@ require 'rubygems'
 require 'bundler'
 
 require 'redis'
+require_relative 'rolling_window'
+
+
 
 $redis_store_obj = Redis.new
 
-puts 'started'
-
-def incr_time_precisions(user_id)
-  time_precission = {current_second: Time.now.strftime('%S').to_i,
-                      current_minute: Time.now.strftime('%M').to_i,
-                      current_hour: Time.now.strftime('%H').to_i}
-
-  time_precission[:current_user_second] = "user:#{user_id}:second:#{time_precission[:current_second]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60), :keys => [time_precission[:current_user_second]])
-  time_precission[:counter_second] = get_time_counter(result)
-
-  time_precission[:current_user_minute] = "user:#{user_id}:minute:#{time_precission[:current_minute]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60*60), :keys => [time_precission[:current_user_minute]])
-  time_precission[:counter_minute] = get_time_counter(result)
-
-  time_precission[:current_user_hour] = "user:#{user_id}:hour:#{time_precission[:current_hour]}"
-  result = $redis_store_obj.eval(lua_set_or_inc(60*60*24), :keys => [time_precission[:current_user_hour]])
-  time_precission[:counter_hour] = get_time_counter(result)
-
-  time_precission
-end
 
 def get_time_counter(result)
   result == 'OK' ? 1 : result.to_i
@@ -57,8 +39,9 @@ end
 
 def send_stats_every_second_for_x_seconds_to_user(seconds, user_id)
   result = []
-  result << incr_time_precisions(user_id)
-  seconds.times{ |i| sleep 0.5;result << incr_time_precisions(user_id) }
+  rolling_window = RollingWindow.new($redis_store_obj)
+  result << rolling_window.register(user_id)
+  seconds.times{ |i| sleep 0.5;result << rolling_window.register(user_id) }
   # we sum the last value of each :current_user_second
   total_sum = result.group_by {|h| h[:current_second]}.map {|a|a.last.last[:counter_second]}.sum
   time_second_keys = result.map{|h| h[:current_user_second]}
