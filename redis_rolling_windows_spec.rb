@@ -9,11 +9,11 @@ require_relative 'rolling_window'
 $redis_store_obj = Redis.new
 
 
-def send_stats_every_second_for_x_seconds_to_user(seconds, user_id)
+def send_stats(user_id:, number_of_stats:, sleep_time: )
   result = []
   rolling_window = RollingWindow.new($redis_store_obj)
   result << rolling_window.register(user_id)
-  seconds.times{ |i| sleep 0.5;result << rolling_window.register(user_id) }
+  number_of_stats.times{ |i| sleep sleep_time; result << rolling_window.register(user_id) }
   # we sum the last value of each :current_user_second
   total_sum = result.group_by {|h| h[:current_second]}.map {|a|a.last.last[:counter_second]}.sum
   time_second_keys = result.map{|h| h[:current_user_second]}
@@ -32,7 +32,7 @@ RSpec.describe "Rolling windows in Redis" do
   before do
     $redis_store_obj.flushall
     @user_id = 10360
-    @start_second, @finish_second, @total_count, @user_second_keys = send_stats_every_second_for_x_seconds_to_user(5, @user_id)
+    @start_second, @finish_second, @total_count, @user_second_keys = send_stats(user_id: @user_id, number_of_stats: 5,sleep_time: 0.5 )
   end
 
   it "sums all the key's values of the last seconds" do
