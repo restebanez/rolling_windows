@@ -14,9 +14,9 @@ def send_stats(user_id:, number_of_stats:, sleep_time: )
   rolling_window = RollingWindow.new($redis_store_obj)
   result << rolling_window.register(user_id)
   number_of_stats.times{ |i| sleep sleep_time; result << rolling_window.register(user_id) }
-  # we sum the last value of each :current_user_second
+  # we sum the last value of each :user_redis_key_per_second
   total_sum = result.group_by {|h| h[:current_second]}.map {|a|a.last.last[:counter_second]}.sum
-  time_second_keys = result.map{|h| h[:current_user_second]}
+  time_second_keys = result.map{|h| h[:user_redis_key_per_second]}
   [result.first[:current_second],result.last[:current_second],total_sum, time_second_keys.uniq]
 end
 

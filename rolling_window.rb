@@ -21,7 +21,7 @@ class RollingWindow
     time_now = Time.now
     [:second, :minute, :hour].each_with_object({}) do |precision, result|
       result["current_#{precision}".to_sym] = extract_time(time_now, precision)
-      result["current_user_#{precision}".to_sym] = user_redis_key(user_id, time_now, precision)
+      result["user_redis_key_per_#{precision}".to_sym] = user_redis_key(user_id, time_now, precision)
       result["counter_#{precision}".to_sym] = incr(user_id, time_now, precision)
     end
   end
