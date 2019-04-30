@@ -26,9 +26,9 @@ class RollingWindow
       result["counter_#{precision}".to_sym] = incr(precision)
     end
   end
-
+  
   def sum_last_x_seconds(seconds_back, current_second=Time.now.strftime('%S').to_i)
-    seconds_range(finish_second: current_second, seconds_back: seconds_back ).each_with_object({total: 0, used_redis_keys: []}) do |second, hash|
+    time_range(finish_time: current_second, time_back: seconds_back, time_precision: :seconds).each_with_object({total: 0, used_redis_keys: []}) do |second, hash|
       key = "user:#{user_id}:second:#{second}"
       value = redis.get(key).to_i
       puts "#{key} #{value}" if value > 0
@@ -64,9 +64,21 @@ class RollingWindow
   end
 
   def seconds_range(finish_second:, seconds_back: )
-    (0..seconds_back).map {|s| (finish_second-=1) + 1 }.sort.map {|i| i < 0 ? i + 60 : i}
+    time_range(finish_time: finish_second, time_back: seconds_back, time_precision: :seconds)
   end
 
+  def time_precision_to_max_number
+    {
+        seconds: 60,
+        minutes: 60,
+        hours: 24
+    }
+  end
+
+  def time_range(finish_time:, time_back:, time_precision:)
+    max_number = time_precision_to_max_number.fetch(time_precision)
+    (0..time_back).map {|s| (finish_time -=1 ) + 1 }.sort.map {|i| i < 0 ? i + max_number : i}
+  end
 
   def get_time_counter(result)
     result == 'OK' ? 1 : result.to_i
