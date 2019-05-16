@@ -26,7 +26,7 @@ class RollingWindow
       result["counter_#{precision}".to_sym] = incr(precision)
     end
   end
-  
+
   def sum_last_x_seconds(seconds_back, current_second=Time.now.strftime('%S').to_i)
     time_range(finish_time: current_second, time_back: seconds_back, time_precision: :seconds).each_with_object({total: 0, used_redis_keys: []}) do |second, hash|
       key = "user:#{user_id}:second:#{second}"
@@ -61,10 +61,6 @@ class RollingWindow
   def get_last_second(start:, finish:)
     finish += 60 if finish < start
     finish - start
-  end
-
-  def seconds_range(finish_second:, seconds_back: )
-    time_range(finish_time: finish_second, time_back: seconds_back, time_precision: :seconds)
   end
 
   def time_precision_to_max_number

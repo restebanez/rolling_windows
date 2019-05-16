@@ -40,7 +40,6 @@ RSpec.describe "Rolling windows in Redis" do
     expect(output[:used_redis_keys]).to be_empty
   end
 
-=begin
   context "expired stats" do
     let(:user_id) { 12345 }
     before do
@@ -56,7 +55,7 @@ RSpec.describe "Rolling windows in Redis" do
       expect(output[:used_redis_keys]).to be_empty
     end
   end
-=end
+
   context "Send stats every 0.2 seconds" do
     before do
       $redis_store_obj.flushall
