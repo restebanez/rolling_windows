@@ -5,3 +5,4 @@ ruby '2.5.1'
 
 gem 'rspec'
 gem 'redis'
+gem 'activesupport'
