@@ -17,7 +17,7 @@ RSpec.describe "Rolling windows in Redis" do
     let(:epoch_to) { epoch_since + one_day_in_seconds  }
 
     it 'returns the buckes names within the time range' do
-      bucket_names = rolling_window.get_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to)
+      bucket_names = rolling_window.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to)
       expect(bucket_names).to eq('')
     end
   end
