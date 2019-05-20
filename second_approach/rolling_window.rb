@@ -26,26 +26,6 @@ class RollingWindow
     puts "Debug: epoch_to:   #{epoch_to_time}"
     puts "Debug: difference: #{epoch_to_time - epoch_since_time} seconds"
     search_finished_time_windows(epoch_since: epoch_since_time, epoch_to: epoch_to_time, found_windows: []).sort_by { |w| w[:window_starts]}.uniq
-    #puts Time.at(epoch_since).at_beginning_of_day
-#    TIME_WINDOWS.reverse.each_with_object([]) do |bucket, list|
-#      # would it fit in this bucket without taking into account the starting time?
-#      if (epoch_to_time - epoch_since_time) > bucket[:span]
-#        puts "bucket #{bucket[:span]} fits"
-#        # does it fit within the starting time
-#        starts = epoch_since_time.send(bucket[:starts])
-#        ends = starts + bucket[:span]
-#        puts "First Window: starts: #{starts} - ends: #{ends}"
-#        # If start <= epoch_since_time; increase window by span
-#        while starts <= epoch_since_time do
-#          starts = starts + bucket[:span]
-#        end
-#        puts "Found Window: starts: #{starts} - ends: #{starts + bucket[:span]}"
-#
-#      else
-#        puts "bucket #{bucket[:span]} NOT fit"
-#      end
-#
-#    end
   end
 
   def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [], time_windows: TIME_WINDOWS.reverse.deep_dup)
