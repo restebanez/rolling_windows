@@ -48,16 +48,15 @@ class RollingWindow
 #    end
   end
 
-  def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [])
+  def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [], time_windows: TIME_WINDOWS.reverse)
     remaining_window = epoch_to - epoch_since
     puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}"
     if remaining_window < 2.minutes # change it to 1.minute
       puts "finish recursive"
       return found_windows
     else
-      TIME_WINDOWS.reverse.each do |bucket|
+      while bucket = time_windows.shift
         if remaining_window > bucket[:span]
-          #found_windows.any? {|w| w[:span] == bucket[:span] }
           found_windows_in_this_time_span = []
           window_starts =  epoch_since.send(bucket[:starts])
           window_finishes = window_starts + bucket[:span]
@@ -76,7 +75,7 @@ class RollingWindow
             last_window_finishes = found_windows_in_this_time_span.last[:window_finishes]
             puts "first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
             #return found_windows + found_windows_in_this_time_span
-            search_finished_time_windows(epoch_since: epoch_since, epoch_to: first_window_starts, found_windows: found_windows + found_windows_in_this_time_span)
+            return search_finished_time_windows(epoch_since: epoch_since, epoch_to: first_window_starts, found_windows: found_windows + found_windows_in_this_time_span, time_windows: time_windows)
           end
         end
       end
