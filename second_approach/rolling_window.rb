@@ -2,14 +2,13 @@ require 'active_support'
 require 'active_support/core_ext' # https://guides.rubyonrails.org/active_support_core_extensions.html
 
 class RollingWindow
-   TIME_WINDOWS = [ # each lenght is a factor of 6 of the previous one
-     { span: 50.seconds, expiration: 25.hours, starts: :at_beginning_of_hour },
+  TIME_WINDOWS = [
+     { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
      { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
      { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_hour },
-     { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day },
-     { span: 18.hours,   expiration: 7.days,   starts: :at_beginning_of_week },
-     { span: 108.hours,  expiration: 30.days,  starts: :at_beginning_of_month }
-   ]
+     { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day  },
+     { span: 1.day,      expiration: 8.days,   starts: :at_beginning_of_week },
+   ].freeze
 
   def initialize(redis, user_id)
     @redis = redis
