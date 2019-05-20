@@ -31,7 +31,7 @@ class RollingWindow
   def search_finished_time_windows(epoch_since:, epoch_to:, time_windows: TIME_WINDOWS.reverse.dup)
     remaining_window = epoch_to - epoch_since
     puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}, time_window_left:  #{time_windows.size}"
-    if remaining_window < 60 #|| time_windows.blank?
+    if remaining_window < TIME_WINDOWS.first[:span] #|| time_windows.blank?
       puts "finish recursive"
       return []
     else
