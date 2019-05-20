@@ -25,7 +25,7 @@ class RollingWindow
     puts "Debug: epoch_since:#{epoch_since_time}"
     puts "Debug: epoch_to:   #{epoch_to_time}"
     puts "Debug: difference: #{epoch_to_time - epoch_since_time} seconds"
-    search_finished_time_windows(epoch_since: epoch_since_time, epoch_to: epoch_to_time, found_windows: [])
+    search_finished_time_windows(epoch_since: epoch_since_time, epoch_to: epoch_to_time, found_windows: []).sort_by { |w| w[:window_starts]}.uniq
     #puts Time.at(epoch_since).at_beginning_of_day
 #    TIME_WINDOWS.reverse.each_with_object([]) do |bucket, list|
 #      # would it fit in this bucket without taking into account the starting time?
@@ -50,6 +50,7 @@ class RollingWindow
 
   def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [], time_windows: TIME_WINDOWS.reverse.deep_dup)
     remaining_window = epoch_to - epoch_since
+    return [] if remaining_window == 0
     puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}, time_window_left:  #{time_windows.size}, found_windows: #{found_windows.size}"
     if remaining_window <= 60 || time_windows.blank?
       puts "finish recursive"
@@ -74,15 +75,11 @@ class RollingWindow
           if found_windows_in_this_time_span.present?
             first_window_starts = found_windows_in_this_time_span.first[:window_starts]
             last_window_finishes = found_windows_in_this_time_span.last[:window_finishes]
+
             puts "first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
-            #return found_windows + found_windows_in_this_time_span
             return (found_windows + search_finished_time_windows(epoch_since: epoch_since, epoch_to: first_window_starts, found_windows:  found_windows_in_this_time_span, time_windows: time_windows.deep_dup) +
-                    search_finished_time_windows(epoch_since: last_window_finishes, epoch_to: epoch_to, found_windows: found_windows_in_this_time_span, time_windows: time_windows.deep_dup))
-          else
-            #[]
+                                    search_finished_time_windows(epoch_since: last_window_finishes, epoch_to: epoch_to, found_windows: found_windows_in_this_time_span, time_windows: time_windows.deep_dup))
           end
-        else
-          #[]
         end
       end
       []
