@@ -10,7 +10,7 @@ $redis_store_obj = Redis.new
 RSpec.describe "Rolling windows in Redis" do
   let(:user_id) { 12345 }
   let(:rolling_window) { RollingWindow.new($redis_store_obj, user_id) }
-  let(:epoch_since) { Time.iso8601("2019-05-18T18:01:29+01:00").to_i }
+  let(:epoch_since) { Time.iso8601("2019-05-18T18:02:29+01:00").to_i }
 
   context "computing one day one day" do
     let(:one_day_in_seconds) { 60 * 60 * 24}

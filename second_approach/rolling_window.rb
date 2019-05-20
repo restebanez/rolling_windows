@@ -48,37 +48,44 @@ class RollingWindow
 #    end
   end
 
-  def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [], time_windows: TIME_WINDOWS.reverse)
+  def search_finished_time_windows(epoch_since:, epoch_to:, found_windows: [], time_windows: TIME_WINDOWS.reverse.deep_dup)
     remaining_window = epoch_to - epoch_since
-    puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}"
-    if remaining_window < 2.minutes # change it to 1.minute
+    puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}, time_window_left:  #{time_windows.size}, found_windows: #{found_windows.size}"
+    if remaining_window <= 60 || time_windows.blank?
       puts "finish recursive"
       return found_windows
     else
       while bucket = time_windows.shift
+        puts "current time window to check: #{bucket[:span]}"
         if remaining_window > bucket[:span]
+          puts 'it may fit'
           found_windows_in_this_time_span = []
           window_starts =  epoch_since.send(bucket[:starts])
           window_finishes = window_starts + bucket[:span]
           while window_finishes <= epoch_to do
-            window_starts = window_starts + bucket[:span]
-            window_finishes = window_starts + bucket[:span]
-
             if window_starts >= epoch_since and window_finishes <= epoch_to
               found_window = {window_starts: window_starts, window_finishes: window_finishes, span: bucket[:span]}
               puts "FOUND: #{found_window}"
               found_windows_in_this_time_span << found_window
             end
+            window_starts = window_starts + bucket[:span]
+            window_finishes = window_starts + bucket[:span]
           end
           if found_windows_in_this_time_span.present?
             first_window_starts = found_windows_in_this_time_span.first[:window_starts]
             last_window_finishes = found_windows_in_this_time_span.last[:window_finishes]
             puts "first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
             #return found_windows + found_windows_in_this_time_span
-            return search_finished_time_windows(epoch_since: epoch_since, epoch_to: first_window_starts, found_windows: found_windows + found_windows_in_this_time_span, time_windows: time_windows)
+            return (found_windows + search_finished_time_windows(epoch_since: epoch_since, epoch_to: first_window_starts, found_windows:  found_windows_in_this_time_span, time_windows: time_windows.deep_dup) +
+                    search_finished_time_windows(epoch_since: last_window_finishes, epoch_to: epoch_to, found_windows: found_windows_in_this_time_span, time_windows: time_windows.deep_dup))
+          else
+            #[]
           end
+        else
+          #[]
         end
       end
+      []
     end
 
   end
