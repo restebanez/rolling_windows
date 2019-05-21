@@ -5,17 +5,17 @@ require "rspec/json_expectations" # https://relishapp.com/waterlink/rspec-json-e
 require 'time'
 
 require 'redis'
-require_relative 'rolling_window'
+require_relative 'time_buckets'
 
 $redis_store_obj = Redis.new
 
-RSpec.describe "Rolling windows in Redis" do
-  let(:rolling_window) { RollingWindow.new($redis_store_obj, 111) }
+RSpec.describe TimeBuckets do
+  let(:time_buckets) { TimeBuckets.new($redis_store_obj, 111) }
   let(:epoch_since) { Time.parse("2019-05-18 18:02:29 +01:00") }
 
   context 'a few minutes' do
     let(:epoch_to) { epoch_since + 10.minutes  }
-    subject { rolling_window.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
+    subject { time_buckets.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       puts JSON.pretty_generate(subject)
@@ -54,7 +54,7 @@ RSpec.describe "Rolling windows in Redis" do
   context "computing one day" do
     let(:epoch_to) { epoch_since + 1.day  }
 
-    subject { rolling_window.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
+    subject { time_buckets.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.generate(subject)).to include_json(
