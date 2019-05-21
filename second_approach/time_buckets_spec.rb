@@ -162,7 +162,6 @@ RSpec.describe TimeBuckets do
     subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
-      puts JSON.pretty_generate(subject)
       expect(JSON.generate(subject)).to match_unordered_json(
         [
           {

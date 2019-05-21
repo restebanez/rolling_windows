@@ -56,8 +56,8 @@ class TimeBuckets
 
             puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
             return (found_windows +
-                find_time_buckets_in_range(time_from: time_from,          time_to: first_window_starts, time_windows: time_windows.dup) +
-                find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,            time_windows: time_windows.dup))
+                find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
+                find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
           end
         end
        # []
