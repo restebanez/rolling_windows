@@ -15,7 +15,7 @@ RSpec.describe TimeBuckets do
     let(:time_buckets) { TimeBuckets.new(high_precision_time_windows) }
 
     context 'since' do
-      subject { time_buckets.find_since(time_since: Time.now - 14.seconds) }
+      subject { time_buckets.find_since_sorted(time_since: Time.now - 29.seconds) }
 
       it 'returns the largest possible time span windows within the time range' do
         puts JSON.pretty_generate(subject)

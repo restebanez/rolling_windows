@@ -28,44 +28,53 @@ class TimeBuckets
     find_in_range(*args).sort_by { |w| w[:window_starts] }
   end
 
-  # time_since: - from a definite past time until now
-  def find_since(time_since: )
-    find_in_range(time_from: time_since, time_to: Time.now, time_windows: time_span_windows, use_open_windows: true)
+  def find_since_sorted(*args)
+    find_since(*args).sort_by { |w| w[:window_starts] }
+  end
 
+  # time_since: - from a definite past time until now
+  def find_since(time_since:)
+    time_now = Time.now
+    puts "find_since, Recieve: #{time_since}, time_now: #{time_now}"
+    return [] if (time_now - time_since) < shorter_time_window_span
+    open_window = get_open_window(time_since, time_now)
+    [open_window] + find_in_range(time_from: time_since, time_to: open_window.fetch(:window_starts), time_windows: time_span_windows)
   end
   
   # when using current time you can use unfinished window times
-  def find_in_range(time_from:, time_to:, time_windows: time_span_windows, use_open_windows: false)
-    puts "Recieve: diff: #{(time_to - time_from)}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
+  def find_in_range(time_from:, time_to:, time_windows: time_span_windows)
+    puts "find_in_range, Recieve: diff: #{(time_to - time_from)}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
     return [] if (time_to - time_from) < shorter_time_window_span
 
     while bucket = time_windows.shift
-      next unless found_windows = find_fitting_windows(time_from, time_to, bucket, use_open_windows)
+      next unless found_windows = find_fitting_windows(time_from, time_to, bucket)
       return found_windows +
-          find_in_range(time_from: time_from, time_to: found_windows.first.fetch(:window_starts), time_windows: time_windows.dup, use_open_windows: use_open_windows) +
-          find_in_range(time_from: found_windows.last.fetch(:window_finishes), time_to: time_to,  time_windows: time_windows.dup, use_open_windows: use_open_windows)
+          find_in_range(time_from: time_from, time_to: found_windows.first.fetch(:window_starts), time_windows: time_windows.dup) +
+          find_in_range(time_from: found_windows.last.fetch(:window_finishes), time_to: time_to,  time_windows: time_windows.dup)
     end
   end
 
   private
 
-  def find_fitting_windows(time_from, time_to, bucket, use_open_windows)
+  def find_fitting_windows(time_from, time_to, bucket)
     return nil if (time_to - time_from) < bucket[:span] # may it fit?
     first_window = get_first_window(time_from, bucket)
-    if use_open_windows
-      puts 'finding open windows'
-      puts find_open_window(first_window, time_from, time_to)
-    end
     found_windows = find_closed_windows(first_window, time_from, time_to)
     found_windows.empty? ? nil : found_windows
   end
 
+  def get_open_window(time_since, time_now)
+    time_span_windows.each do |bucket|
+      first_window = get_first_window(time_since, bucket)
+      found_window = find_open_window(first_window, time_since, time_now)
+      return found_window if found_window
+    end
+  end
+
   def find_open_window(window, time_since, time_now)
-    [].tap do |found_windows|
-      while window[:window_starts] <= time_now  do
-        found_windows << window if window[:window_starts] >= time_since and window[:window_finishes] >= time_now
-        window = next_window(window)
-      end
+    while window[:window_starts] <= time_now  do
+      return window if window[:window_starts] >= time_since and window[:window_finishes] >= time_now
+      window = next_window(window)
     end
   end
 
