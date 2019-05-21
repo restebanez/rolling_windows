@@ -13,7 +13,45 @@ RSpec.describe "Rolling windows in Redis" do
   let(:rolling_window) { RollingWindow.new($redis_store_obj, 111) }
   let(:epoch_since) { Time.parse("2019-05-18 18:02:29 +01:00") }
 
-  context "computing one day one day" do
+  context 'a few minutes' do
+    let(:epoch_to) { epoch_since + 10.minutes  }
+    subject { rolling_window.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
+
+    it 'returns the largest possible time span windows within the time range' do
+      puts JSON.pretty_generate(subject)
+      expect(JSON.generate(subject)).to include_json(
+        [
+          {
+            "window_starts": "2019-05-18 18:03:00 +0100",
+            "window_finishes": "2019-05-18 18:04:00 +0100",
+            "span": "60"
+          },
+          {
+            "window_starts": "2019-05-18 18:04:00 +0100",
+            "window_finishes": "2019-05-18 18:05:00 +0100",
+            "span": "60"
+          },
+          {
+            "window_starts": "2019-05-18 18:05:00 +0100",
+            "window_finishes": "2019-05-18 18:10:00 +0100",
+            "span": "300"
+          },
+          {
+            "window_starts": "2019-05-18 18:10:00 +0100",
+            "window_finishes": "2019-05-18 18:11:00 +0100",
+            "span": "60"
+          },
+          {
+            "window_starts": "2019-05-18 18:11:00 +0100",
+            "window_finishes": "2019-05-18 18:12:00 +0100",
+            "span": "60"
+          }
+        ]
+      )
+    end
+  end
+
+  context "computing one day" do
     let(:epoch_to) { epoch_since + 1.day  }
 
     subject { rolling_window.generate_bucket_names(epoch_since: epoch_since, epoch_to: epoch_to) }
