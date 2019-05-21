@@ -3,7 +3,7 @@ require 'active_support/core_ext' # https://guides.rubyonrails.org/active_suppor
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
 class TimeBuckets
-  attr_reader :time_span_windows
+  attr_reader :time_span_windows, :shorter_time_window_span
 
   DEFAULT_TIME_SPAN_WINDOWS = [
     { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
@@ -13,26 +13,30 @@ class TimeBuckets
     { span: 1.day,      expiration: 8.days,   starts: :last_week },
   ].freeze
 
-  def initialize(time_span_windows = DEFAULT_TIME_SPAN_WINDOWS)
-    @time_span_windows = time_span_windows.sort_by { |w| w[:span] }.reverse
+  def initialize(time_span_windows_param = DEFAULT_TIME_SPAN_WINDOWS)
+    # TODO validate:
+    # there is at lest one window
+    # each element has three keys
+    @time_span_windows = time_span_windows_param.sort_by { |w| w[:span] }.reverse
+    @shorter_time_window_span = time_span_windows.last[:span]
   end
-  
+
   def find_time_buckets_in_range_sorted(*args)
     find_time_buckets_in_range(*args).sort_by { |w| w[:window_starts] }
   end
 
-  # The search is different when current time is used rather than arbitrary to
+  # The search is different when current time (Since - from a definite past time until now) is used rather than arbitrary time_to
   # when using current time you can use unfinished window times
   def find_time_buckets_in_range(time_from:, time_to:, time_windows: time_span_windows)
     remaining_window = time_to - time_from
     puts "Recieve: diff: #{remaining_window}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
-    if remaining_window < time_span_windows.last[:span] #|| time_windows.blank?
-      puts "finish recursive"
+    if remaining_window < shorter_time_window_span # || time_windows.blank?
+      puts "finish recursive b/c #{remaining_window} < #{shorter_time_window_span} is true"
       return []
     else
       while bucket = time_windows.shift
         puts "current time window to check: #{bucket[:span]}"
-        if remaining_window > bucket[:span]
+        if remaining_window >= bucket[:span]
           puts 'it may fit'
           found_windows = []
           window_starts =  time_from.send(bucket[:starts])
@@ -50,12 +54,13 @@ class TimeBuckets
             first_window_starts = found_windows.first[:window_starts]
             last_window_finishes = found_windows.last[:window_finishes]
 
-            puts "first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
+            puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
             return (found_windows +
                 find_time_buckets_in_range(time_from: time_from,          time_to: first_window_starts, time_windows: time_windows.dup) +
                 find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,            time_windows: time_windows.dup))
           end
         end
+       # []
       end
       #[]
     end
