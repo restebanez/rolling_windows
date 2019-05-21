@@ -13,7 +13,7 @@ RSpec.describe TimeBuckets do
 
   context 'a few minutes' do
     let(:epoch_to) { epoch_since + 10.minutes  }
-    subject { time_buckets.find_time_buckets_in_range_sorted(epoch_since: epoch_since, epoch_to: epoch_to) }
+    subject { time_buckets.find_time_buckets_in_range_sorted(since: epoch_since, to: epoch_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       puts JSON.pretty_generate(subject)
@@ -52,7 +52,7 @@ RSpec.describe TimeBuckets do
   context "computing one day" do
     let(:epoch_to) { epoch_since + 1.day  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(epoch_since: epoch_since, epoch_to: epoch_to) }
+    subject { time_buckets.find_time_buckets_in_range_sorted(since: epoch_since, to: epoch_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.generate(subject)).to include_json(
