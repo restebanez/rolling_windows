@@ -3,7 +3,9 @@ require 'active_support/core_ext' # https://guides.rubyonrails.org/active_suppor
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
 class TimeBuckets
-  DEFAULT_TIME_WINDOWS = [
+  attr_reader :time_span_windows
+
+  DEFAULT_TIME_SPAN_WINDOWS = [
      { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
      { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
      { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_day  },
@@ -11,8 +13,8 @@ class TimeBuckets
      { span: 1.day,      expiration: 8.days,   starts: :last_week },
    ].freeze
 
-  def initialize(time_windows = DEFAULT_TIME_WINDOWS)
-    @time_windows = time_windows.sort_by { |w| w[:span]}.reverse
+  def initialize(time_span_windows = DEFAULT_TIME_SPAN_WINDOWS)
+    @time_span_windows = time_span_windows.sort_by { |w| w[:span] }.reverse
   end
 
   # The search is different when current time is used rather than arbitrary epoch_to
@@ -26,10 +28,10 @@ class TimeBuckets
     search_finished_time_windows(epoch_since: epoch_since_time, epoch_to: epoch_to_time).sort_by { |w| w[:window_starts]}
   end
 
-  def search_finished_time_windows(epoch_since:, epoch_to:, time_windows: @time_windows)
+  def search_finished_time_windows(epoch_since:, epoch_to:, time_windows: time_span_windows)
     remaining_window = epoch_to - epoch_since
     puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}, time_window_left:  #{time_windows.size}"
-    if remaining_window < @time_windows.last[:span] #|| time_windows.blank?
+    if remaining_window < time_span_windows.last[:span] #|| time_windows.blank?
       puts "finish recursive"
       return []
     else
