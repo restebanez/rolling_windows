@@ -14,6 +14,14 @@ RSpec.describe TimeBuckets do
     }
     let(:time_buckets) { TimeBuckets.new(high_precision_time_windows) }
 
+    context 'since' do
+      subject { time_buckets.find_since(time_since: Time.now - 14.seconds) }
+
+      it 'returns the largest possible time span windows within the time range' do
+        puts JSON.pretty_generate(subject)
+      end
+    end
+
     context 'less than a minute' do
       let(:time_from) { Time.parse("2011-04-10 23:58:58 +01:00") }
       let(:time_to) { time_from + 43.seconds  }
