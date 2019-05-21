@@ -28,32 +28,28 @@ class TimeBuckets
   # The search is different when current time (Since - from a definite past time until now) is used rather than arbitrary time_to
   # when using current time you can use unfinished window times
   def find_time_buckets_in_range(time_from:, time_to:, time_windows: time_span_windows)
-    remaining_window = time_to - time_from
-    puts "Recieve: diff: #{remaining_window}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
-    return [] if remaining_window < shorter_time_window_span
+    puts "Recieve: diff: #{(time_to - time_from)}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
+    return [] if (time_to - time_from) < shorter_time_window_span
 
     while bucket = time_windows.shift
-      puts "current time window to check: #{bucket[:span]}"
-      next if remaining_window < bucket[:span]
-      puts 'it may fit'
-      found_windows = []
-
-      current_window = get_first_window(time_from, bucket)
-
-      while current_window[:window_finishes] <= time_to do
-        found_windows << current_window if does_window_fit_in_time_range?(current_window, time_from, time_to)
-        current_window = next_window(current_window)
-      end
-
-      next if found_windows.empty?
-
-      first_window_starts = found_windows.first[:window_starts]
-      last_window_finishes = found_windows.last[:window_finishes]
-      puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
-      return (found_windows +
-          find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
-          find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
+      next unless found_windows = find_fitting_windows(time_from, time_to, bucket)
+      return found_windows +
+          find_time_buckets_in_range(time_from: time_from, time_to: found_windows.first[:window_starts], time_windows: time_windows.dup) +
+          find_time_buckets_in_range(time_from: found_windows.last[:window_finishes], time_to: time_to,  time_windows: time_windows.dup)
     end
+  end
+
+  def find_fitting_windows(time_from, time_to, bucket)
+    return nil if (time_to - time_from) < bucket[:span] # may it fit?
+    found_windows = []
+    current_window = get_first_window(time_from, bucket)
+
+    while current_window[:window_finishes] <= time_to do
+      found_windows << current_window if does_window_fit_in_time_range?(current_window, time_from, time_to)
+      current_window = next_window(current_window)
+    end
+
+    found_windows.empty? ? nil : found_windows
   end
 
   def does_window_fit_in_time_range?(window, time_from, time_to)
@@ -80,3 +76,34 @@ class TimeBuckets
     time_span_windows.inject(0) {|count, bucket| bucket[:expiration] / bucket[:span] + count  }
   end
 end
+
+# this is fully recursive, I think it's harder to read
+=begin
+  def find_time_buckets_in_range(time_from:, time_to:, time_windows: time_span_windows)
+    remaining_window = time_to - time_from
+    puts "Recieve: diff: #{remaining_window}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
+    return [] if remaining_window < shorter_time_window_span
+    bucket = time_windows.shift
+    puts "current time window to check: #{bucket[:span]}"
+    find_time_buckets_in_range(time_from: time_from, time_to: time_to, time_windows: time_windows.dup) if remaining_window < bucket[:span]
+    puts 'it may fit'
+    found_windows = []
+
+    current_window = get_first_window(time_from, bucket)
+    while current_window[:window_finishes] <= time_to do
+      found_windows << current_window if does_window_fit_in_time_range?(current_window, time_from, time_to)
+      current_window = next_window(current_window)
+    end
+
+    if found_windows.empty?
+      find_time_buckets_in_range(time_from: time_from, time_to: time_to, time_windows: time_windows.dup)
+    else
+      first_window_starts = found_windows.first[:window_starts]
+      last_window_finishes = found_windows.last[:window_finishes]
+      puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
+      return (found_windows +
+          find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
+          find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
+    end
+  end
+=end
