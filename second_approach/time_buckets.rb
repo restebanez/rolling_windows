@@ -6,29 +6,24 @@ class TimeBuckets
   attr_reader :time_span_windows
 
   DEFAULT_TIME_SPAN_WINDOWS = [
-     { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
-     { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
-     { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_day  },
-     { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day  },
-     { span: 1.day,      expiration: 8.days,   starts: :last_week },
-   ].freeze
+    { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
+    { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
+    { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_day  },
+    { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day  },
+    { span: 1.day,      expiration: 8.days,   starts: :last_week },
+  ].freeze
 
   def initialize(time_span_windows = DEFAULT_TIME_SPAN_WINDOWS)
     @time_span_windows = time_span_windows.sort_by { |w| w[:span] }.reverse
   end
+  
+  def find_time_buckets_in_range_sorted(epoch_since: , epoch_to: )
+    find_time_buckets_in_range(epoch_since: epoch_since, epoch_to: epoch_to).sort_by { |w| w[:window_starts] }
+  end
 
   # The search is different when current time is used rather than arbitrary epoch_to
   # when using current time you can use unfinished window times
-  def generate_bucket_names(epoch_since: , epoch_to: )
-    epoch_since_time = Time.at(epoch_since)
-    epoch_to_time = Time.at(epoch_to) # TODO, check if epoch_to_time is close to current time
-    puts "Debug: epoch_since:#{epoch_since_time}"
-    puts "Debug: epoch_to:   #{epoch_to_time}"
-    puts "Debug: difference: #{epoch_to_time - epoch_since_time} seconds"
-    search_finished_time_windows(epoch_since: epoch_since_time, epoch_to: epoch_to_time).sort_by { |w| w[:window_starts]}
-  end
-
-  def search_finished_time_windows(epoch_since:, epoch_to:, time_windows: time_span_windows)
+  def find_time_buckets_in_range(epoch_since:, epoch_to:, time_windows: time_span_windows)
     remaining_window = epoch_to - epoch_since
     puts "Recieve: diff: #{remaining_window}, epoch_since: #{epoch_since}, epoch_to: #{epoch_to}, time_window_left:  #{time_windows.size}"
     if remaining_window < time_span_windows.last[:span] #|| time_windows.blank?
@@ -57,8 +52,8 @@ class TimeBuckets
 
             puts "first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
             return (found_windows +
-                search_finished_time_windows(epoch_since: epoch_since,          epoch_to: first_window_starts, time_windows: time_windows.dup) +
-                search_finished_time_windows(epoch_since: last_window_finishes, epoch_to: epoch_to,            time_windows: time_windows.dup))
+                find_time_buckets_in_range(epoch_since: epoch_since,          epoch_to: first_window_starts, time_windows: time_windows.dup) +
+                find_time_buckets_in_range(epoch_since: last_window_finishes, epoch_to: epoch_to,            time_windows: time_windows.dup))
           end
         end
       end
@@ -67,10 +62,7 @@ class TimeBuckets
 
   end
 
-
-
-   # This is just an informative method
-  def count_max_number_of_buckets
-    TIME_WINDOWS.inject(0) {|count, bucket| bucket[:expiration] / bucket[:span] + count  }
+  def stat_max_number_of_buckets
+    time_span_windows.inject(0) {|count, bucket| bucket[:expiration] / bucket[:span] + count  }
   end
 end
