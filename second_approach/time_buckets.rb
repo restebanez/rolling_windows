@@ -52,17 +52,17 @@ class TimeBuckets
   def find_fitting_windows(time_from, time_to, bucket, use_open_windows)
     return nil if (time_to - time_from) < bucket[:span] # may it fit?
     first_window = get_first_window(time_from, bucket)
-    found_windows = find_closed_windows(first_window, time_from, time_to)
+    found_windows = find_closed_windows(first_window, time_from, time_to, use_open_windows)
     found_windows.empty? ? nil : found_windows
   end
 
   def find_closed_windows(window, time_from, time_to)
-    found_windows = []
-    while window[:window_finishes] <= time_to do
-      found_windows << window if does_window_fit_in_time_range?(window, time_from, time_to)
-      window = next_window(window)
+    [].tap do |found_windows|
+      while window[:window_finishes] <= time_to do
+        found_windows << window if does_window_fit_in_time_range?(window, time_from, time_to)
+        window = next_window(window)
+      end
     end
-    found_windows
   end
 
   def does_window_fit_in_time_range?(window, time_from, time_to)
