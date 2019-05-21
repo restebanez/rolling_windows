@@ -30,39 +30,32 @@ class TimeBuckets
   def find_time_buckets_in_range(time_from:, time_to:, time_windows: time_span_windows)
     remaining_window = time_to - time_from
     puts "Recieve: diff: #{remaining_window}, time_from: #{time_from}, time_to: #{time_to}, time_window_left:  #{time_windows.size}"
-    if remaining_window < shorter_time_window_span # || time_windows.blank?
-      puts "finish recursive b/c #{remaining_window} < #{shorter_time_window_span} is true"
-      return []
-    else
-      while bucket = time_windows.shift
-        puts "current time window to check: #{bucket[:span]}"
-        if remaining_window >= bucket[:span]
-          puts 'it may fit'
-          found_windows = []
-          window_starts =  time_from.send(bucket[:starts])
-          window_finishes = window_starts + bucket[:span]
-          while window_finishes <= time_to do
-            if window_starts >= time_from and window_finishes <= time_to
-              found_window = {window_starts: window_starts, window_finishes: window_finishes, span: bucket[:span]}
-              puts "FOUND: #{found_window}"
-              found_windows << found_window
-            end
-            window_starts = window_starts + bucket[:span]
-            window_finishes = window_starts + bucket[:span]
-          end
-          if found_windows.present?
-            first_window_starts = found_windows.first[:window_starts]
-            last_window_finishes = found_windows.last[:window_finishes]
+    return [] if remaining_window < shorter_time_window_span
 
-            puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
-            return (found_windows +
-                find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
-                find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
-          end
+    while bucket = time_windows.shift
+      puts "current time window to check: #{bucket[:span]}"
+      next if remaining_window < bucket[:span]
+      puts 'it may fit'
+      found_windows = []
+      window_starts =  time_from.send(bucket[:starts])
+      window_finishes = window_starts + bucket[:span]
+      while window_finishes <= time_to do
+        if window_starts >= time_from and window_finishes <= time_to
+          found_window = {window_starts: window_starts, window_finishes: window_finishes, span: bucket[:span]}
+          puts "FOUND: #{found_window}"
+          found_windows << found_window
         end
-       # []
+        window_starts = window_starts + bucket[:span]
+        window_finishes = window_starts + bucket[:span]
       end
-      #[]
+      if found_windows.present?
+        first_window_starts = found_windows.first[:window_starts]
+        last_window_finishes = found_windows.last[:window_finishes]
+        puts "Found buckets range, first_window_starts: #{first_window_starts}, last_window_finishes: #{last_window_finishes}"
+        return (found_windows +
+            find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
+            find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
+      end
     end
 
   end
