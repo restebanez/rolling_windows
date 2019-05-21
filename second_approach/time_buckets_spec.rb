@@ -1,14 +1,60 @@
 require 'rubygems'
 require 'bundler'
 require "rspec/json_expectations" # https://relishapp.com/waterlink/rspec-json-expectations/docs/json-expectations/array-matching-support-for-include-json-matcher
-
-require 'time'
-
 require_relative 'time_buckets'
 
-
 RSpec.describe TimeBuckets do
-  context "using this time windows" do
+  context "using high precision span windows" do
+    let(:high_precision_time_windows) {
+      [
+        { span: 1.second,   expiration: 1.hour, starts: :at_beginning_of_hour },
+        { span: 10.seconds, expiration: 5.hour, starts: :at_beginning_of_hour },
+        { span: 30.seconds, expiration: 1.day, starts: :at_beginning_of_day  }
+      ]
+    }
+    let(:time_buckets) { TimeBuckets.new(high_precision_time_windows) }
+
+    context 'less than a minute' do
+      let(:time_from) { Time.parse("2011-04-10 23:58:58 +01:00") }
+      let(:time_to) { time_from + 43.seconds  }
+
+      subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
+
+      it 'returns the largest possible time span windows within the time range' do
+        expect(JSON.pretty_generate(subject)).to match_unordered_json(
+          [
+            {
+              "window_starts": "2011-04-10 23:58:58 +0100",
+              "window_finishes": "2011-04-10 23:58:59 +0100",
+              "span": "1"
+            },
+            {
+              "window_starts": "2011-04-10 23:58:59 +0100",
+              "window_finishes": "2011-04-10 23:59:00 +0100",
+              "span": "1"
+            },
+            {
+              "window_starts": "2011-04-10 23:59:00 +0100",
+              "window_finishes": "2011-04-10 23:59:30 +0100",
+              "span": "30"
+            },
+            {
+              "window_starts": "2011-04-10 23:59:30 +0100",
+              "window_finishes": "2011-04-10 23:59:40 +0100",
+              "span": "10"
+            },
+            {
+              "window_starts": "2011-04-10 23:59:40 +0100",
+              "window_finishes": "2011-04-10 23:59:41 +0100",
+              "span": "1"
+            }
+          ]
+        )
+      end
+    end
+  end
+
+  context "using default time windows" do
     let(:default_time_windows) {
       [
         { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
