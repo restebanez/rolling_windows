@@ -14,7 +14,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 23:58:00 +01:00") }
     let(:time_to) { time_from + 30.seconds  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(subject).to be_empty
@@ -25,7 +25,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 23:58:00 +01:00") }
     let(:time_to) { time_from + 1.minute  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -44,7 +44,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 23:00:00 +01:00") }
     let(:time_to) { time_from + 5.minutes  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -63,7 +63,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 23:00:00 +01:00") }
     let(:time_to) { time_from + 30.minutes  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -82,7 +82,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 21:00:00 +01:00") }
     let(:time_to) { time_from + 3.hours  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -101,7 +101,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 00:00:00 +01:00") }
     let(:time_to) { time_from + 1.day  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -120,7 +120,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 23:58:01 +01:00") }
     let(:time_to) { time_from + 6.minutes  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
@@ -159,7 +159,7 @@ RSpec.describe TimeBuckets do
   context 'a few minutes range at mid day' do
     let(:time_from) { Time.parse("2019-05-18 18:02:29 +01:00") }
     let(:time_to) { time_from + 10.minutes  }
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.generate(subject)).to match_unordered_json(
@@ -198,7 +198,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2019-05-18 18:02:29 +01:00") }
     let(:time_to) { time_from + 1.day  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.generate(subject)).to match_unordered_json(
@@ -317,7 +317,7 @@ RSpec.describe TimeBuckets do
     let(:time_from) { Time.parse("2011-04-10 00:00:00 +01:00") }
     let(:time_to) { time_from + 7.day  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
+    subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.pretty_generate(subject)).to match_unordered_json(
