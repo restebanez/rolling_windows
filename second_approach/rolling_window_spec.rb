@@ -5,12 +5,12 @@ require "rspec/json_expectations" # https://relishapp.com/waterlink/rspec-json-e
 require 'time'
 
 require 'redis'
-require_relative 'time_window'
+require_relative 'rolling_window'
 
 $redis_store_obj = Redis.new
 
-RSpec.describe TimeWindow do
-  let(:rolling_window) { TimeWindow.new($redis_store_obj, 111) }
+RSpec.describe "Rolling windows in Redis" do
+  let(:rolling_window) { RollingWindow.new($redis_store_obj, 111) }
   let(:epoch_since) { Time.parse("2019-05-18 18:02:29 +01:00") }
 
   context 'a few minutes' do

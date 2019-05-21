@@ -1,4 +1,4 @@
-class TimeWindow
+class RollingWindow
   attr_reader :redis, :user_id, :time_now
 
   STRFTIME = {

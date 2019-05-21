@@ -11,7 +11,7 @@ $redis_store_obj = Redis.new
 
 def send_stats(user_id:, number_of_stats:, sleep_time: )
   result = []
-  rolling_window = TimeWindow.new($redis_store_obj, user_id)
+  rolling_window = RollingWindow.new($redis_store_obj, user_id)
   result << rolling_window.incr_counter
   number_of_stats.times{ |i| sleep sleep_time; result << rolling_window.incr_counter }
   # we sum the last value of each :user_redis_key_per_second
@@ -35,7 +35,7 @@ RSpec.describe "Rolling windows in Redis" do
   end
 
   it 'returns 0' do
-    output = TimeWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
+    output = RollingWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
     expect(output[:total]).to eq(0)
     expect(output[:used_redis_keys]).to be_empty
   end
@@ -50,7 +50,7 @@ RSpec.describe "Rolling windows in Redis" do
     end
 
     it 'returns 0' do
-      output = TimeWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
+      output = RollingWindow.new($redis_store_obj, user_id).sum_last_x_seconds(59)
       expect(output[:total]).to eq(0)
       expect(output[:used_redis_keys]).to be_empty
     end
@@ -67,7 +67,7 @@ RSpec.describe "Rolling windows in Redis" do
       puts "start: #{@start_second}, end: #{@finish_second}"
       total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
       puts '------'
-      output = TimeWindow.new($redis_store_obj, @user_id).sum_seconds_range(@start_second, @finish_second)
+      output = RollingWindow.new($redis_store_obj, @user_id).sum_seconds_range(@start_second, @finish_second)
       expect(output[:total]).to eq(@total_count)
       expect(output[:total]).to eq(total_sum_in_redis_search)
       expect(output[:used_redis_keys]).to eq(@used_redis_keys)
@@ -85,7 +85,7 @@ RSpec.describe "Rolling windows in Redis" do
       puts "start: #{@start_second}, end: #{@finish_second}"
       total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
       puts '------'
-      output = TimeWindow.new($redis_store_obj, @user_id).sum_seconds_range(@start_second, @finish_second)
+      output = RollingWindow.new($redis_store_obj, @user_id).sum_seconds_range( @start_second, @finish_second)
       expect(output[:total]).to eq(@total_count)
       expect(output[:total]).to eq(total_sum_in_redis_search)
       expect(output[:used_redis_keys]).to eq(@used_redis_keys)
@@ -103,7 +103,7 @@ RSpec.describe "Rolling windows in Redis" do
       puts "start: #{@start_second}, end: #{@finish_second}"
       total_sum_in_redis_search = search_seconds_keys_redis(@user_id)
       puts '------'
-      output = TimeWindow.new($redis_store_obj, @user_id).sum_seconds_range(@start_second, @finish_second)
+      output = RollingWindow.new($redis_store_obj, @user_id).sum_seconds_range(@start_second, @finish_second)
       expect(output[:total]).to eq(@total_count)
       expect(output[:total]).to eq(total_sum_in_redis_search)
       expect(output[:used_redis_keys]).to eq(@used_redis_keys)
