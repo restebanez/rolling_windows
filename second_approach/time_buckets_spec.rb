@@ -9,11 +9,11 @@ require_relative 'time_buckets'
 
 RSpec.describe TimeBuckets do
   let(:time_buckets) { TimeBuckets.new }
-  let(:epoch_since) { Time.parse("2019-05-18 18:02:29 +01:00") }
+  let(:time_from) { Time.parse("2019-05-18 18:02:29 +01:00") }
 
   context 'a few minutes' do
-    let(:epoch_to) { epoch_since + 10.minutes  }
-    subject { time_buckets.find_time_buckets_in_range_sorted(since: epoch_since, to: epoch_to) }
+    let(:time_to) { time_from + 10.minutes  }
+    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       puts JSON.pretty_generate(subject)
@@ -50,9 +50,9 @@ RSpec.describe TimeBuckets do
   end
 
   context "computing one day" do
-    let(:epoch_to) { epoch_since + 1.day  }
+    let(:time_to) { time_from + 1.day  }
 
-    subject { time_buckets.find_time_buckets_in_range_sorted(since: epoch_since, to: epoch_to) }
+    subject { time_buckets.find_time_buckets_in_range_sorted(time_from: time_from, time_to: time_to) }
 
     it 'returns the largest possible time span windows within the time range' do
       expect(JSON.generate(subject)).to include_json(
