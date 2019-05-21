@@ -24,7 +24,7 @@ class TimeBuckets
   def find_time_buckets_in_range_sorted(*args)
     find_time_buckets_in_range(*args).sort_by { |w| w[:window_starts] }
   end
-
+  
   # The search is different when current time (Since - from a definite past time until now) is used rather than arbitrary time_to
   # when using current time you can use unfinished window times
   def find_time_buckets_in_range(time_from:, time_to:, time_windows: time_span_windows)
@@ -37,16 +37,12 @@ class TimeBuckets
       next if remaining_window < bucket[:span]
       puts 'it may fit'
       found_windows = []
-      window_starts = time_from.send(bucket[:starts])
-      current_window = { window_starts: window_starts, window_finishes: window_starts + bucket[:span], span: bucket[:span] }
+
+      current_window = get_first_window(time_from, bucket)
 
       while current_window[:window_finishes] <= time_to do
-        if current_window[:window_starts] >= time_from and current_window[:window_finishes] <= time_to
-          puts "FOUND: #{current_window}"
-          found_windows << current_window.dup
-        end
-        current_window[:window_starts] += current_window[:span]
-        current_window[:window_finishes] += current_window[:span]
+        found_windows << current_window if does_window_fit_in_time_range?(current_window, time_from, time_to)
+        current_window = next_window(current_window)
       end
 
       next if found_windows.empty?
@@ -58,6 +54,26 @@ class TimeBuckets
           find_time_buckets_in_range(time_from: time_from,            time_to: first_window_starts, time_windows: time_windows.dup) +
           find_time_buckets_in_range(time_from: last_window_finishes, time_to: time_to,             time_windows: time_windows.dup))
     end
+  end
+
+  def does_window_fit_in_time_range?(window, time_from, time_to)
+    window[:window_starts] >= time_from and window[:window_finishes] <= time_to
+  end
+
+  def get_first_window(time_from, span:, starts:, expiration:)
+    {
+        window_starts: time_from.send(starts),
+        window_finishes: time_from.send(starts) + span,
+        span: span
+    }
+  end
+
+  def next_window(window_starts: ,window_finishes: ,span:)
+    {
+        window_starts: window_starts + span,
+        window_finishes: window_finishes + span,
+        span: span
+    }
   end
 
   def stat_max_number_of_buckets
