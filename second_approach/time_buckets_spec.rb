@@ -14,11 +14,16 @@ RSpec.describe TimeBuckets do
     }
     let(:time_buckets) { TimeBuckets.new(high_precision_time_windows) }
 
-    context 'since' do
-      subject { time_buckets.find_since_sorted(time_since: Time.now - 29.seconds) }
+    context 'search since some time ago to now' do
+      let(:time_since ) { Time.now - 31.seconds }
+      subject { time_buckets.find_since_sorted(time_since: time_since) }
 
-      it 'returns the largest possible time span windows within the time range' do
-        puts JSON.pretty_generate(subject)
+      it 'includes an unfinished open window' do
+        expect(subject.last).to include(window_finishes: be > Time.now)
+      end
+
+      it 'includes at least one closed window' do
+        expect(subject.first).to include(window_starts: be <= time_since + 1.second)
       end
     end
 

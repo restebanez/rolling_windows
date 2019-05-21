@@ -1,5 +1,6 @@
 require 'active_support'
 require 'active_support/core_ext' # https://guides.rubyonrails.org/active_support_core_extensions.html
+
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
 class TimeBuckets
@@ -58,28 +59,13 @@ class TimeBuckets
 
   def find_fitting_windows(time_from, time_to, bucket)
     return nil if (time_to - time_from) < bucket[:span] # may it fit?
-    first_window = get_first_window(time_from, bucket)
-    found_windows = find_closed_windows(first_window, time_from, time_to)
+    found_windows = find_closed_windows(time_from, time_to, bucket)
     found_windows.empty? ? nil : found_windows
   end
 
-  def get_open_window(time_since, time_now)
-    time_span_windows.each do |bucket|
-      first_window = get_first_window(time_since, bucket)
-      found_window = find_open_window(first_window, time_since, time_now)
-      return found_window if found_window
-    end
-  end
-
-  def find_open_window(window, time_since, time_now)
-    while window[:window_starts] <= time_now  do
-      return window if window[:window_starts] >= time_since and window[:window_finishes] >= time_now
-      window = next_window(window)
-    end
-  end
-
-  def find_closed_windows(window, time_from, time_to)
+  def find_closed_windows(time_from, time_to, bucket)
     [].tap do |found_windows|
+      window = get_first_window(time_from, bucket)
       while window[:window_finishes] <= time_to do
         found_windows << window if does_window_fit_in_time_range?(window, time_from, time_to)
         window = next_window(window)
@@ -87,6 +73,20 @@ class TimeBuckets
     end
   end
 
+  def get_open_window(time_since, time_now)
+    time_span_windows.each do |bucket|
+      found_window = find_open_window(time_since, time_now, bucket)
+      return found_window if found_window
+    end
+  end
+
+  def find_open_window(time_since, time_now, bucket)
+    window = get_first_window(time_since, bucket)
+    while window[:window_starts] <= time_now  do
+      return window if window[:window_starts] >= time_since and window[:window_finishes] >= time_now
+      window = next_window(window)
+    end
+  end
 
   def does_window_fit_in_time_range?(window, time_from, time_to)
     window[:window_starts] >= time_from and window[:window_finishes] <= time_to
