@@ -39,6 +39,8 @@ class TimeBuckets
     end
   end
 
+  private
+
   def find_fitting_windows(time_from, time_to, bucket)
     return nil if (time_to - time_from) < bucket[:span] # may it fit?
     found_windows = []
