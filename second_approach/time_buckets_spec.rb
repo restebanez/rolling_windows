@@ -4,13 +4,11 @@ require "rspec/json_expectations" # https://relishapp.com/waterlink/rspec-json-e
 
 require 'time'
 
-require 'redis'
 require_relative 'time_buckets'
 
-$redis_store_obj = Redis.new
 
 RSpec.describe TimeBuckets do
-  let(:time_buckets) { TimeBuckets.new($redis_store_obj, 111) }
+  let(:time_buckets) { TimeBuckets.new }
   let(:epoch_since) { Time.parse("2019-05-18 18:02:29 +01:00") }
 
   context 'a few minutes' do
