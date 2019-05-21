@@ -2,7 +2,7 @@ require 'active_support'
 require 'active_support/core_ext' # https://guides.rubyonrails.org/active_support_core_extensions.html
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
-class RollingWindow
+class TimeWindow
   TIME_WINDOWS = [
      { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
      { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
