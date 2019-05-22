@@ -4,7 +4,7 @@ require 'active_support/core_ext' # https://guides.rubyonrails.org/active_suppor
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
 class TimeBuckets
-  attr_reader :time_span_windows, :shorter_time_window_span
+  attr_reader :time_span_windows, :shorter_time_window_span, :time_now
 
   DEFAULT_TIME_SPAN_WINDOWS = [
     { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
@@ -52,6 +52,13 @@ class TimeBuckets
       return found_windows +
           find_in_range(time_from: time_from, time_to: found_windows.first.fetch(:window_starts), time_windows: time_windows.dup) +
           find_in_range(time_from: found_windows.last.fetch(:window_finishes), time_to: time_to,  time_windows: time_windows.dup)
+    end
+  end
+
+  def get_current_windows
+    @time_now = Time.now
+    time_span_windows.map do |bucket|
+      find_open_window(time_now - bucket[:span],time_now, bucket).merge(expiration: bucket.fetch(:expiration))
     end
   end
 
