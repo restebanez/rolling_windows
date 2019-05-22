@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'bundler'
-require "rspec/json_expectations" # https://relishapp.com/waterlink/rspec-json-expectations/docs/json-expectations/array-matching-support-for-include-json-matcher
+require "rspec/json_expectations"
 require_relative 'time_buckets'
 
 RSpec.describe TimeBuckets do

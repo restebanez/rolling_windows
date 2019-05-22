@@ -1,5 +1,5 @@
 require 'active_support'
-require 'active_support/core_ext' # https://guides.rubyonrails.org/active_support_core_extensions.html
+require 'active_support/core_ext'
 
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html

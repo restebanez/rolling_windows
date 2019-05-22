@@ -12,6 +12,7 @@ GEM
       concurrent-ruby (~> 1.0)
     minitest (5.11.3)
     redis (4.1.0)
+    rounding (1.0.1)
     rspec (3.8.0)
       rspec-core (~> 3.8.0)
       rspec-expectations (~> 3.8.0)
@@ -36,6 +37,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   redis
+  rounding
   rspec
   rspec-json_expectations (= 2.2.0)
 
