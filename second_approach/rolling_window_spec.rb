@@ -47,7 +47,7 @@ RSpec.describe "Rolling windows in Redis" do
     describe '#incr_counter in the past' do
       let(:user_id) { 2222 }
       let(:time) { Time.parse("2011-04-10 13:00:03 +01:00") }
-      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time) }
+      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time, adjust_expiration: false) }
 
       it 'creates as many redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)

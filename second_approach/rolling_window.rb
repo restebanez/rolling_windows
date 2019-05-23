@@ -8,13 +8,16 @@ class RollingWindow
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
 
-  def incr_windows_counter(user_id: , record_type: ,time: Time.now)
+  def incr_windows_counter(user_id: , record_type: ,time: Time.now, adjust_expiration: true)
     time_buckets.get_buckets_at(time).each_with_object({ creation_time: time, keys: [], windows: [], sum: 0}) do |window, stats|
       key_name = redis_user_key_name(window, user_id, record_type)
-      value = incr(key_name, window.fetch(:expiration).to_i)
-      stats[:keys] << { name: key_name, value: value }
+      expiration = window.fetch(:expiration)
+      expiration -= (Time.now - time) if adjust_expiration
+      raise(ArgumentError, "We can't set an already expire record: #{expiration}") if expiration <= 0
+      value = incr(key_name, expiration.to_i)
+      stats[:keys] << { name: key_name, value: value, ex: expiration.to_i}
       stats[:sum] += value
-      stats[:windows] << window
+      stats[:windows] << window.merge(expiration: expiration)
     end
   end
 
