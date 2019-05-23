@@ -25,7 +25,8 @@ class RollingWindow
   end
 
   def incr_windows_counter(user_id: , record_type: ,time: Time.now, adjust_expiration: true)
-    time_buckets.get_buckets_at(time).each_with_object({ creation_time: time, keys: [], windows: [], sum: 0}) do |window, stats|
+    init_stats = { creation_time: time, keys: [], windows: [], sum: 0, all_users_sum: 0}
+    time_buckets.get_buckets_at(time).each_with_object(init_stats) do |window, stats|
       expiration = window.fetch(:expiration)
       expiration -= (Time.now - time) if adjust_expiration
       raise(ArgumentError, "We can't set an already expired record: #{expiration}") if expiration <= 0
@@ -33,6 +34,8 @@ class RollingWindow
       user_result = incr_window_counter(user_id: user_id, record_type: record_type, window: window)
       stats[:keys] << user_result
       stats[:sum] += user_result[:value]
+      all_users_result = incr_window_counter(user_id: 'all', record_type: record_type, window: window)
+      stats[:all_users_sum] += all_users_result[:value]
     end
   end
 
