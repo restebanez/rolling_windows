@@ -5,7 +5,7 @@ require 'rounding'
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
 class TimeBuckets
-  attr_reader :time_span_windows, :shorter_time_window_span, :time_now
+  attr_reader :time_span_windows, :shorter_time_window_span, :longest_time_window_span, :time_now
 
   DEFAULT_TIME_SPAN_WINDOWS = [
     { span: 1.minute,   expiration: 25.hours },
@@ -22,6 +22,7 @@ class TimeBuckets
     # validate time windows shouldn't overlap, and there shouldn't be any gap
     @time_span_windows = time_span_windows_param.sort_by { |w| w[:span] }.reverse
     @shorter_time_window_span = time_span_windows.last[:span]
+    @longest_time_window_span = time_span_windows.first[:span]
   end
 
   def find_in_range_sorted(*args)

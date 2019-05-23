@@ -8,16 +8,38 @@ class RollingWindow
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
 
+  def query_since(time_since:, user_id: ,record_types: ['d','b'] )
+    buckets_to_query = get_buckets_to_query(time_since, user_id, record_types)
+    response = redis.mget(buckets_to_query)
+    {
+        record_types: record_types,
+        sum: response.map(&:to_i).sum,
+        queried_seconds_range: (Time.now - time_since).to_i,
+        queried_buckets_count: response.size,
+        matched_queried_buckets_count: response.compact.size,
+        queried_buckets: buckets_to_query
+    }
+  end
+
   def incr_windows_counter(user_id: , record_type: ,time: Time.now, adjust_expiration: true)
     time_buckets.get_buckets_at(time).each_with_object({ creation_time: time, keys: [], windows: [], sum: 0}) do |window, stats|
       key_name = redis_user_key_name(window, user_id, record_type)
       expiration = window.fetch(:expiration)
       expiration -= (Time.now - time) if adjust_expiration
-      raise(ArgumentError, "We can't set an already expire record: #{expiration}") if expiration <= 0
+      raise(ArgumentError, "We can't set an already expired record: #{expiration}") if expiration <= 0
       value = incr(key_name, expiration.to_i)
       stats[:keys] << { name: key_name, value: value, ex: expiration.to_i}
       stats[:sum] += value
       stats[:windows] << window.merge(expiration: expiration)
+    end
+  end
+
+  private
+
+  def get_buckets_to_query(time_since, user_id, record_types)
+    time_buckets.find_since(time_since: time_since).inject([]) do |buckets, window|
+      bucket_with_types = record_types.map { |record| redis_user_key_name(window, user_id, record) }
+      buckets.push(*bucket_with_types)
     end
   end
 

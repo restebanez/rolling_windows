@@ -63,6 +63,35 @@ RSpec.describe "Rolling windows in Redis" do
       end
     end
 
+    describe '#query_since' do
+      context 'we collected a deliver 45 minutes ago ,half an hour ago, and just now' do
+        let(:user_id) { 3333 }
+        let(:time_since) { 45.minutes.ago }
+        before do
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time_since + 1.second, adjust_expiration: false)
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id)
+        end
+
+        subject { rolling_window.query_since(time_since: time_since , user_id: user_id) }
+
+        it 'sums all values' do
+          expect(subject[:sum]).to eq(4)
+        end
+
+        it 'gets results from only three buckets' do
+          expect(subject[:matched_queried_buckets_count]).to eq(3)
+        end
+
+        it 'required at least X number of windows' do
+          elapsed_time = Time.now - time_since
+          minimum_number_of_windows = elapsed_time / rolling_window.time_buckets.longest_time_window_span
+          expect(subject[:queried_buckets_count]).to be > minimum_number_of_windows
+        end
+      end
+    end
+
   end
 end
 
