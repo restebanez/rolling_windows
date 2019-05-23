@@ -8,7 +8,7 @@ class RollingWindow
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
 
-  def query_since(time_since:, user_id: ,record_types: ['d','b'] )
+  def query_since(time_since:, user_id: 'all', record_types: ['d','b','f','rb'] )
     buckets_to_query = get_buckets_to_query(time_since, user_id, record_types)
     starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
