@@ -10,6 +10,8 @@ class RollingWindow
 
   def query_since(time_since:, user_id: ,record_types: ['d','b'] )
     buckets_to_query = get_buckets_to_query(time_since, user_id, record_types)
+    starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     response = redis.mget(buckets_to_query)
     {
         record_types: record_types,
@@ -17,24 +19,33 @@ class RollingWindow
         queried_seconds_range: (Time.now - time_since).to_i,
         queried_buckets_count: response.size,
         matched_queried_buckets_count: response.compact.size,
+        redis_query_time: ending - starting,
         queried_buckets: buckets_to_query
     }
   end
 
   def incr_windows_counter(user_id: , record_type: ,time: Time.now, adjust_expiration: true)
     time_buckets.get_buckets_at(time).each_with_object({ creation_time: time, keys: [], windows: [], sum: 0}) do |window, stats|
-      key_name = redis_user_key_name(window, user_id, record_type)
       expiration = window.fetch(:expiration)
       expiration -= (Time.now - time) if adjust_expiration
       raise(ArgumentError, "We can't set an already expired record: #{expiration}") if expiration <= 0
-      value = incr(key_name, expiration.to_i)
-      stats[:keys] << { name: key_name, value: value, ex: expiration.to_i}
-      stats[:sum] += value
       stats[:windows] << window.merge(expiration: expiration)
+      user_result = incr_window_counter(user_id: user_id, record_type: record_type, window: window)
+      stats[:keys] << user_result
+      stats[:sum] += user_result[:value]
     end
   end
 
   private
+
+  def incr_window_counter(user_id: , record_type:, window: )
+    user_key_name = redis_user_key_name(window, user_id, record_type)
+    {
+        name: user_key_name,
+        value: redis_incr(user_key_name, window.fetch(:expiration).to_i),
+        ex: window.fetch(:expiration).to_i
+    }
+  end
 
   def get_buckets_to_query(time_since, user_id, record_types)
     time_buckets.find_since(time_since: time_since).inject([]) do |buckets, window|
@@ -43,7 +54,7 @@ class RollingWindow
     end
   end
 
-  def incr(key_name, expiration)
+  def redis_incr(key_name, expiration)
     result = redis.eval(lua_set_or_inc(expiration), :keys => [key_name])
     get_time_counter(result)
   end

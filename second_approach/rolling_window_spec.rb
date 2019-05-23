@@ -88,6 +88,11 @@ RSpec.describe "Rolling windows in Redis" do
           elapsed_time = Time.now - time_since
           minimum_number_of_windows = elapsed_time / rolling_window.time_buckets.longest_time_window_span
           expect(subject[:queried_buckets_count]).to be > minimum_number_of_windows
+          puts subject[:redis_query_time]
+        end
+
+        it 'perfoms in less than 10 microseconds' do
+          expect(subject[:redis_query_time]).to be < 10.0/1000000
         end
       end
     end
