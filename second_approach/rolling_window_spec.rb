@@ -91,11 +91,14 @@ RSpec.describe "Rolling windows in Redis" do
             expect(subject[:matched_queried_buckets_count]).to eq(3)
           end
 
+          it 'reports stats per record type' do
+            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>2})
+          end
+
           it 'required at least X number of windows' do
             elapsed_time = Time.now - time_since
             minimum_number_of_windows = elapsed_time / rolling_window.time_buckets.longest_time_window_span
             expect(subject[:queried_buckets_count]).to be > minimum_number_of_windows
-            puts subject[:redis_query_time]
           end
 
           it 'perfoms in less than 10 microseconds' do
@@ -112,6 +115,10 @@ RSpec.describe "Rolling windows in Redis" do
 
           it 'gets results from only three buckets' do
             expect(subject[:matched_queried_buckets_count]).to eq(4)
+          end
+
+          it 'reports stats per record type' do
+            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>3})
           end
         end
 
