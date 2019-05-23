@@ -21,11 +21,11 @@ RSpec.describe "Rolling windows in Redis" do
   context "using high precision span windows" do
     let(:high_precision_time_windows) {
       [
-        { span: 1.second,   expiration: 1.hour, starts: :at_beginning_of_hour },
-        { span: 10.seconds, expiration: 5.hour, starts: :at_beginning_of_hour },
-        { span: 30.seconds, expiration: 1.day,  starts: :at_beginning_of_hour  },
-        { span: 60.seconds, expiration: 1.day,  starts: :at_beginning_of_hour  },
-        { span: 5.minutes, expiration: 1.day,   starts: :at_beginning_of_day  },
+        { span: 1.second,   expiration: 1.hour },
+        { span: 10.seconds, expiration: 5.hour },
+        { span: 30.seconds, expiration: 1.day  },
+        { span: 60.seconds, expiration: 1.day  },
+        { span: 5.minutes, expiration: 1.day   },
       ]
     }
     let(:rolling_window) { RollingWindow.new(redis, high_precision_time_windows) }

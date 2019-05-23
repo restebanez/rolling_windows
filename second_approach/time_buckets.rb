@@ -8,11 +8,11 @@ class TimeBuckets
   attr_reader :time_span_windows, :shorter_time_window_span, :time_now
 
   DEFAULT_TIME_SPAN_WINDOWS = [
-    { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
-    { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
-    { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_day  },
-    { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day  },
-    { span: 1.day,      expiration: 8.days,   starts: :last_week },
+    { span: 1.minute,   expiration: 25.hours },
+    { span: 5.minutes,  expiration: 36.hours },
+    { span: 30.minutes, expiration: 36.hours  },
+    { span: 3.hours,    expiration: 48.hours  },
+    { span: 1.day,      expiration: 8.days },
   ].freeze
 
   def initialize(time_span_windows_param = DEFAULT_TIME_SPAN_WINDOWS)
@@ -20,8 +20,6 @@ class TimeBuckets
     # validate there is at lest one window
     # validate each element has three keys
     # validate time windows shouldn't overlap, and there shouldn't be any gap
-    # validate 'starts' value shouldn't go further back than the expiration time
-    # Can I automatically generate 'starts' checking the next or previous 'span' value?
     @time_span_windows = time_span_windows_param.sort_by { |w| w[:span] }.reverse
     @shorter_time_window_span = time_span_windows.last[:span]
   end
@@ -100,7 +98,7 @@ class TimeBuckets
     window[:window_starts] >= time_from and window[:window_finishes] <= time_to
   end
 
-  def get_first_window(time_from, span:, starts:, expiration:)
+  def get_first_window(time_from, span:, expiration:)
     {
         window_starts: time_from.floor_to(span),
         window_finishes: time_from.floor_to(span) + span,

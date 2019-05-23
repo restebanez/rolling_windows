@@ -7,9 +7,9 @@ RSpec.describe TimeBuckets do
   context "using high precision span windows" do
     let(:high_precision_time_windows) {
       [
-        { span: 1.second,   expiration: 1.hour, starts: :at_beginning_of_hour },
-        { span: 10.seconds, expiration: 5.hour, starts: :at_beginning_of_hour },
-        { span: 30.seconds, expiration: 1.day, starts: :at_beginning_of_day  }
+        { span: 1.second,   expiration: 1.hour },
+        { span: 10.seconds, expiration: 5.hour },
+        { span: 30.seconds, expiration: 1.day }
       ]
     }
     let(:time_buckets) { TimeBuckets.new(high_precision_time_windows) }
@@ -70,11 +70,11 @@ RSpec.describe TimeBuckets do
   context "using default time windows" do
     let(:default_time_windows) {
       [
-        { span: 1.minute,   expiration: 25.hours, starts: :at_beginning_of_hour },
-        { span: 5.minutes,  expiration: 36.hours, starts: :at_beginning_of_hour },
-        { span: 30.minutes, expiration: 36.hours, starts: :at_beginning_of_day  },
-        { span: 3.hours,    expiration: 48.hours, starts: :at_beginning_of_day  },
-        { span: 1.day,      expiration: 8.days,   starts: :last_week },
+        { span: 1.minute,   expiration: 25.hours },
+        { span: 5.minutes,  expiration: 36.hours },
+        { span: 30.minutes, expiration: 36.hours },
+        { span: 3.hours,    expiration: 48.hours },
+        { span: 1.day,      expiration: 8.days   },
       ]
     }
 
