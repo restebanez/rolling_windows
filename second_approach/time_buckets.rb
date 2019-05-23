@@ -1,5 +1,6 @@
 require 'active_support'
 require 'active_support/core_ext'
+require 'rounding'
 
 # https://ruby-doc.org/core-2.6.3/Time.html
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/time/rdoc/Time.html
@@ -101,13 +102,13 @@ class TimeBuckets
 
   def get_first_window(time_from, span:, starts:, expiration:)
     {
-        window_starts: time_from.send(starts),
-        window_finishes: time_from.send(starts) + span,
+        window_starts: time_from.floor_to(span),
+        window_finishes: time_from.floor_to(span) + span,
         span: span
     }
   end
 
-  def next_window(window_starts: ,window_finishes: ,span:)
+  def next_window(window_starts:, window_finishes:, span:)
     {
         window_starts: window_starts + span,
         window_finishes: window_finishes + span,
