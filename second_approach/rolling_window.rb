@@ -39,7 +39,7 @@ class RollingWindow
   def get_buckets_to_query(time_since, user_id, record_types)
     time_buckets.find_since(time_since: time_since).inject([]) do |buckets, window|
       bucket_with_types = record_types.map { |record| redis_user_key_name(window, user_id, record) }
-      buckets.push(*bucket_with_types)
+      buckets.concat(bucket_with_types)
     end
   end
 
