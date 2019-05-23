@@ -31,12 +31,35 @@ RSpec.describe "Rolling windows in Redis" do
     let(:rolling_window) { RollingWindow.new(redis, high_precision_time_windows) }
 
 
-    describe '#incr_counter' do
+    describe '#incr_counter current time' do
       let(:user_id) { 1111 }
       subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id) }
 
       it 'creates as many redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
+      end
+
+      it 'creates active open buckets using the current time' do
+        expect(Time.now.floor_to(2)).to eq(subject[:creation_time].floor_to(2))
+      end
+    end
+
+    describe '#incr_counter in the past' do
+      let(:user_id) { 2222 }
+      let(:time) { Time.parse("2011-04-10 13:00:03 +01:00") }
+      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time) }
+
+      it 'creates as many redis keys as defined buckets' do
+        expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
+      end
+
+      it 'creates active open buckets using the current time' do
+        expect(time.floor_to(2)).to eq(subject[:creation_time].floor_to(2))
+        expect(time.to_i).to be_within(subject[:windows][0][:window_starts].to_i).of(subject[:windows][0][:window_finishes].to_i)
+        expect(time.to_i).to be_within(subject[:windows][1][:window_starts].to_i).of(subject[:windows][1][:window_finishes].to_i)
+        expect(time.to_i).to be_within(subject[:windows][2][:window_starts].to_i).of(subject[:windows][2][:window_finishes].to_i)
+        expect(time.to_i).to be_within(subject[:windows][3][:window_starts].to_i).of(subject[:windows][3][:window_finishes].to_i)
+        expect(time.to_i).to be_within(subject[:windows][4][:window_starts].to_i).of(subject[:windows][4][:window_finishes].to_i)
       end
     end
 

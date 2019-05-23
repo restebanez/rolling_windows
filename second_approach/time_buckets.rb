@@ -54,10 +54,15 @@ class TimeBuckets
     end
   end
 
-  def get_current_windows
-    @time_now = Time.now
+  def get_buckets_at(time)
     time_span_windows.map do |bucket|
-      find_open_window(time_now - bucket[:span],time_now, bucket).merge(expiration: bucket.fetch(:expiration))
+      window_starts = Time.at(time).floor_to(bucket[:span])
+      {
+          window_starts: window_starts,
+          window_finishes: window_starts + bucket.fetch(:span),
+          span: bucket.fetch(:span),
+          expiration: bucket.fetch(:expiration)
+      }
     end
   end
 

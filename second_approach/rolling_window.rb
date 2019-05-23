@@ -8,10 +8,13 @@ class RollingWindow
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
 
-  def incr_windows_counter(user_id: , record_type:)
-    time_buckets.get_current_windows.each_with_object({ running_time: time_buckets.time_now, keys: [] }) do |window, stats|
+  def incr_windows_counter(user_id: , record_type: ,time: Time.now)
+    time_buckets.get_buckets_at(time).each_with_object({ creation_time: time, keys: [], windows: [], sum: 0}) do |window, stats|
       key_name = redis_user_key_name(window, user_id, record_type)
-      stats[:keys] << { name: key_name, value: incr(key_name, window.fetch(:expiration).to_i) }
+      value = incr(key_name, window.fetch(:expiration).to_i)
+      stats[:keys] << { name: key_name, value: value }
+      stats[:sum] += value
+      stats[:windows] << window
     end
   end
 
