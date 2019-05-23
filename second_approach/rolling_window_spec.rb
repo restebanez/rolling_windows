@@ -77,6 +77,7 @@ RSpec.describe "Rolling windows in Redis" do
           rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
           rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
           rolling_window.incr_windows_counter(record_type: 'd', user_id: other_user_id)
+          rolling_window.incr_windows_counter(record_type: 'f', user_id: other_user_id)
           rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id)
         end
 
@@ -106,19 +107,31 @@ RSpec.describe "Rolling windows in Redis" do
           end
         end
 
+        context 'query a user by a specific type' do
+          subject { rolling_window.query_since(time_since: time_since , user_id: user_id, record_types: ['d'] ) }
+
+          it 'sums all values' do
+            expect(subject[:sum]).to eq(2)
+          end
+
+          it 'reports stats per record type' do
+            expect(subject[:stats_per_record_type]).to eq({"d"=>2})
+          end
+        end
+
         context 'query all users' do
           subject { rolling_window.query_since(time_since: time_since) }
 
           it 'sums all values' do
-            expect(subject[:sum]).to eq(5)
+            expect(subject[:sum]).to eq(6)
           end
 
           it 'gets results from only three buckets' do
-            expect(subject[:matched_queried_buckets_count]).to eq(4)
+            expect(subject[:matched_queried_buckets_count]).to eq(5)
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>3})
+            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>3, "f"=>1})
           end
         end
 
