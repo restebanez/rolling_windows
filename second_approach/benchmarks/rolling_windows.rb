@@ -46,17 +46,19 @@ Benchmark.ips do |x|
 end
 
 
-# Calculating -------------------------------------
-# incr_windows_counter      1.368k (± 1.4%) i/s -      6.888k in   5.036563s
+
+# # Calculating -------------------------------------
+# incr_windows_counter      1.223k (± 1.4%) i/s -      6.171k in   5.046634s
 # incr_windows_counter at random times
-#                           1.330k (± 1.5%) i/s -      6.760k in   5.083068s
+#                           1.437k (± 1.7%) i/s -      7.200k in   5.011700s
 # #query_since, one user, 5 minutes ago, all pmta records
-#                           3.430k (± 3.2%) i/s -     17.289k in   5.045780s
+#                           2.873k (± 3.1%) i/s -     14.504k in   5.054309s
 # #query_since, one user, 1 hour ago, all pmta records
-#                           2.206k (± 2.4%) i/s -     11.220k in   5.089107s
+#                           2.687k (± 5.4%) i/s -     13.392k in   5.000834s
 # #query_since, 24 hour ago, one user, only delivery records
-#                           3.141k (± 2.0%) i/s -     15.700k in   5.000960s
+#                           2.906k (± 2.7%) i/s -     14.612k in   5.031399s
 # #query_since, 24 hour ago, one user, all pmta records
-#                           2.427k (± 2.5%) i/s -     12.291k in   5.067818s
+#                           2.066k (± 2.6%) i/s -     10.472k in   5.072816s
 # #query_since, 24 hour ago, all users, all pmta records
-#                           2.427k (± 2.6%) i/s -     12.200k in   5.029395s
+#                           2.069k (± 2.0%) i/s -     10.422k in   5.040482s
+#

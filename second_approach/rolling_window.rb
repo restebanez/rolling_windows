@@ -2,6 +2,8 @@ require_relative './time_buckets'
 
 class RollingWindow
   attr_reader :redis, :time_buckets, :time_now
+  NEVER_EXPIRE_VALUE = -1
+
 
   def initialize(redis, time_span_windows = TimeBuckets::DEFAULT_TIME_SPAN_WINDOWS)
     @redis = redis
@@ -58,7 +60,12 @@ class RollingWindow
 
   def incr_window_counter(user_id:, pmta_record_type:, window: )
     user_key_name = redis_user_key_name(window, user_id, pmta_record_type)
-    expiration = Time.now - window.fetch(:expire_at)
+    expiration = if window.fetch(:expire_at) == NEVER_EXPIRE_VALUE
+                   NEVER_EXPIRE_VALUE
+                 else
+                   window.fetch(:expire_at) - Time.now
+                 end
+
     {
         name: user_key_name,
         value: redis_incr(user_key_name, expiration.to_i),
