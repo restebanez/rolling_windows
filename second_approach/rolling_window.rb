@@ -8,34 +8,34 @@ class RollingWindow
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
 
-  def query_since(time_since:, user_id: 'all', record_types: ['d','b','f','rb'] )
-    buckets_with_type = get_buckets_with_type(time_since, user_id, record_types)
+  def query_since(time_since:, user_id: 'all', pmta_record_types: ['d','b','f','rb'] )
+    buckets_with_type = get_buckets_with_type(time_since, user_id, pmta_record_types)
     buckets_to_query = buckets_with_type.map { |a| a.fetch(:redis_key_name) }
-    records_types = buckets_with_type.map { |a| a.fetch(:record_type) }
+    records_types = buckets_with_type.map { |a| a.fetch(:pmta_record_type) }
     starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     redis_response = redis.mget(buckets_to_query)
     {
-        record_types: record_types,
+        pmta_record_types: pmta_record_types,
         sum: redis_response.map(&:to_i).sum,
         queried_seconds_range: (Time.now - time_since).to_i,
         queried_buckets_count: redis_response.size,
         matched_queried_buckets_count: redis_response.compact.size,
         redis_query_time: ending - starting,
-        stats_per_record_type: generate_stats(redis_response, records_types),
+        stats_per_pmta_record_type: generate_stats(redis_response, records_types),
         queried_buckets: buckets_to_query
     }
   end
 
-  def incr_windows_counter(user_id: , record_type: ,time: Time.now, never_expire: false)
+  def incr_windows_counter(user_id: , pmta_record_type: ,time: Time.now, never_expire: false)
     init_stats = { creation_time: time, keys: [], windows: [], sum: 0, all_users_sum: 0}
     time_buckets.get_buckets_at(time, never_expire).each_with_object(init_stats) do |window, stats|
       validate_expiration(window.fetch(:expire_at)) unless never_expire
-      user_result = incr_window_counter(user_id: user_id, record_type: record_type, window: window)
+      user_result = incr_window_counter(user_id: user_id, pmta_record_type: pmta_record_type, window: window)
       stats[:windows] << window
       stats[:keys] << user_result
       stats[:sum] += user_result[:value]
-      all_users_result = incr_window_counter(user_id: 'all', record_type: record_type, window: window)
+      all_users_result = incr_window_counter(user_id: 'all', pmta_record_type: pmta_record_type, window: window)
       stats[:all_users_sum] += all_users_result[:value]
     end
   end
@@ -48,14 +48,14 @@ class RollingWindow
   end
 
   def generate_stats(response, records_types)
-    response.zip(records_types).select{|response,_type| response}.each_with_object({}) do |(response, record_type), stats|
-      stats[record_type] ||= 0
-      stats[record_type] += response.to_i
+    response.zip(records_types).select{|response,_type| response}.each_with_object({}) do |(response, pmta_record_type), stats|
+      stats[pmta_record_type] ||= 0
+      stats[pmta_record_type] += response.to_i
     end
   end
 
-  def incr_window_counter(user_id:, record_type:, window: )
-    user_key_name = redis_user_key_name(window, user_id, record_type)
+  def incr_window_counter(user_id:, pmta_record_type:, window: )
+    user_key_name = redis_user_key_name(window, user_id, pmta_record_type)
     expiration = Time.now - window.fetch(:expire_at)
     {
         name: user_key_name,
@@ -64,11 +64,11 @@ class RollingWindow
     }
   end
 
-  def get_buckets_with_type(time_since, user_id, record_types)
+  def get_buckets_with_type(time_since, user_id, pmta_record_types)
     time_buckets.find_since(time_since: time_since).each_with_object([]) do |window, bucket_with_type|
-      record_types.each do |record_type|
-        bucket_with_type << { redis_key_name: redis_user_key_name(window, user_id, record_type),
-                              record_type: record_type }
+      pmta_record_types.each do |pmta_record_type|
+        bucket_with_type << { redis_key_name: redis_user_key_name(window, user_id, pmta_record_type),
+                              pmta_record_type: pmta_record_type }
       end
     end
   end
@@ -78,8 +78,8 @@ class RollingWindow
     get_time_counter(result)
   end
 
-  def redis_user_key_name(window, user_id, record_type)
-    "at:#{window.fetch(:window_starts).to_i}:for:#{window.fetch(:span)}:u:#{user_id}:#{record_type}"
+  def redis_user_key_name(window, user_id, pmta_record_type)
+    "at:#{window.fetch(:window_starts).to_i}:for:#{window.fetch(:span)}:u:#{user_id}:#{pmta_record_type}"
   end
 
   def get_time_counter(result)
@@ -110,8 +110,8 @@ end
     "at:#{window.fetch(:window_starts).to_i}:for:#{window.fetch(:span)}"
   end
 
-  def redis_field_name(record_type: ,user_id:)
-    "#{user_id}:#{record_type}"
+  def redis_field_name(pmta_record_type: ,user_id:)
+    "#{user_id}:#{pmta_record_type}"
   end
 
   def lua_hincr

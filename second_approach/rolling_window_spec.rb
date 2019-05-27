@@ -33,7 +33,7 @@ RSpec.describe "Rolling windows in Redis" do
 
     describe '#incr_counter current time' do
       let(:user_id) { 1111 }
-      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id) }
+      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id) }
 
       it 'creates as many redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
@@ -47,7 +47,7 @@ RSpec.describe "Rolling windows in Redis" do
     describe '#incr_counter in the past' do
       let(:user_id) { 2222 }
       let(:time) { Time.parse("2011-04-10 13:00:03 +01:00") }
-      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time, never_expire: true) }
+      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: time, never_expire: true) }
 
       it 'creates as many user redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
@@ -73,12 +73,12 @@ RSpec.describe "Rolling windows in Redis" do
         let(:other_user_id) { 2342}
         let(:time_since) { 45.minutes.ago }
         before do
-          rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id, time: time_since + 1.second, never_expire: true)
-          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
-          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
-          rolling_window.incr_windows_counter(record_type: 'd', user_id: other_user_id)
-          rolling_window.incr_windows_counter(record_type: 'f', user_id: other_user_id)
-          rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id)
+          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id, time: time_since + 1.second, never_expire: true)
+          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
+          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
+          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: other_user_id)
+          rolling_window.incr_windows_counter(pmta_record_type: 'f', user_id: other_user_id)
+          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id)
         end
 
         context 'query a user' do
@@ -93,7 +93,7 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>2})
+            expect(subject[:stats_per_pmta_record_type]).to eq({"b"=>2, "d"=>2})
           end
 
           it 'required at least X number of windows' do
@@ -108,14 +108,14 @@ RSpec.describe "Rolling windows in Redis" do
         end
 
         context 'query a user by a specific type' do
-          subject { rolling_window.query_since(time_since: time_since , user_id: user_id, record_types: ['d'] ) }
+          subject { rolling_window.query_since(time_since: time_since , user_id: user_id, pmta_record_types: ['d'] ) }
 
           it 'sums all values' do
             expect(subject[:sum]).to eq(2)
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_record_type]).to eq({"d"=>2})
+            expect(subject[:stats_per_pmta_record_type]).to eq({"d"=>2})
           end
         end
 
@@ -131,7 +131,7 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_record_type]).to eq({"b"=>2, "d"=>3, "f"=>1})
+            expect(subject[:stats_per_pmta_record_type]).to eq({"b"=>2, "d"=>3, "f"=>1})
           end
         end
 
