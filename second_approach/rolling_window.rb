@@ -60,17 +60,20 @@ class RollingWindow
 
   def incr_window_counter(user_id:, pmta_record_type:, window: )
     user_key_name = redis_user_key_name(window, user_id, pmta_record_type)
-    expiration = if window.fetch(:expire_at) == NEVER_EXPIRE_VALUE
-                   NEVER_EXPIRE_VALUE
-                 else
-                   window.fetch(:expire_at) - Time.now
-                 end
-
+    ttl = expiration_ttl(window.fetch(:expire_at)).to_i
     {
         name: user_key_name,
-        value: redis_incr(user_key_name, expiration.to_i),
-        ex: expiration.to_i
+        value: redis_incr(user_key_name, ttl),
+        ex: ttl
     }
+  end
+
+  def expiration_ttl(expire_at)
+    if expire_at == NEVER_EXPIRE_VALUE
+      NEVER_EXPIRE_VALUE
+    else
+      expire_at - Time.now
+    end
   end
 
   def get_redis_keys(time_since, user_id, pmta_record_types)
