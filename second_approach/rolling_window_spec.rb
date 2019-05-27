@@ -136,6 +136,37 @@ RSpec.describe "Rolling windows in Redis" do
         end
 
       end
+
+      context 'all the data expired some time ago' do
+        let(:user_id) { 4444 }
+        let(:expired_time) { 2.days.ago }
+        before do
+          # The never_expire allows you to write the record
+          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id, time: expired_time + 1.second, never_expire: true)
+          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: expired_time + 15.minutes, never_expire: true)
+          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: expired_time + 30.minutes, never_expire: true)
+        end
+
+        context 'query a user' do
+          subject { rolling_window.query_since(time_since: expired_time , user_id: user_id) }
+
+          it 'sums all values' do
+            expect(subject[:sum]).to eq(0)
+          end
+
+          it 'skips already expired buckets' do
+            expect(subject[:skipped_expired_buckets].size).to be > 0
+          end
+
+          it 'queries non-expired buckets' do
+            expect(subject[:queried_buckets].size).to be > 0
+          end
+
+          it 'queries non-expired buckets' do
+            expect(subject[:matched_queried_buckets_count]).to eq(0)
+          end
+        end
+      end
     end
 
   end

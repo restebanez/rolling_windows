@@ -9,7 +9,8 @@ class RollingWindow
   end
 
   def query_since(time_since:, user_id: 'all', pmta_record_types: ['d','b','f','rb'] )
-    buckets_with_type = get_buckets_with_type(time_since, user_id, pmta_record_types)
+    all_redis_keys = get_redis_keys(time_since, user_id, pmta_record_types)
+    buckets_with_type = all_redis_keys.fetch(:existing)
     buckets_to_query = buckets_with_type.map { |a| a.fetch(:redis_key_name) }
     records_types = buckets_with_type.map { |a| a.fetch(:pmta_record_type) }
     starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -21,6 +22,7 @@ class RollingWindow
         queried_seconds_range: (Time.now - time_since).to_i,
         queried_buckets_count: redis_response.size,
         matched_queried_buckets_count: redis_response.compact.size,
+        skipped_expired_buckets: all_redis_keys.fetch(:expired, []).map { |a| a.fetch(:redis_key_name) },
         redis_query_time: ending - starting,
         stats_per_pmta_record_type: generate_stats(redis_response, records_types),
         queried_buckets: buckets_to_query
@@ -64,12 +66,20 @@ class RollingWindow
     }
   end
 
-  def get_buckets_with_type(time_since, user_id, pmta_record_types)
-    time_buckets.find_since(time_since: time_since).each_with_object([]) do |window, bucket_with_type|
-      pmta_record_types.each do |pmta_record_type|
-        bucket_with_type << { redis_key_name: redis_user_key_name(window, user_id, pmta_record_type),
-                              pmta_record_type: pmta_record_type }
-      end
+  def get_redis_keys(time_since, user_id, pmta_record_types)
+    init = { existing: [], expired: [] }
+    time_buckets.find_since(time_since: time_since).each_with_object(init) do |window, redis_keys|
+      key_category = window.fetch(:expire_at) > Time.now ? :existing : :expired
+      redis_keys[key_category].concat(expand_redis_key_names(pmta_record_types, window, user_id))
+    end
+  end
+
+  def expand_redis_key_names(pmta_record_types, window, user_id)
+    pmta_record_types.map do |pmta_record_type|
+      {
+          redis_key_name: redis_user_key_name(window, user_id, pmta_record_type),
+          pmta_record_type: pmta_record_type
+      }
     end
   end
 
