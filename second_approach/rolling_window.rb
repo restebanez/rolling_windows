@@ -10,19 +10,19 @@ class RollingWindow
 
   def query_since(time_since:, user_id: 'all', record_types: ['d','b','f','rb'] )
     buckets_with_type = get_buckets_with_type(time_since, user_id, record_types)
-    buckets_to_query = buckets_with_type.map(&:first)
-    records_types = buckets_with_type.map(&:last)
+    buckets_to_query = buckets_with_type.map { |a| a.fetch(:redis_key_name) }
+    records_types = buckets_with_type.map { |a| a.fetch(:record_type) }
     starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    response = redis.mget(buckets_to_query)
+    redis_response = redis.mget(buckets_to_query)
     {
         record_types: record_types,
-        sum: response.map(&:to_i).sum,
+        sum: redis_response.map(&:to_i).sum,
         queried_seconds_range: (Time.now - time_since).to_i,
-        queried_buckets_count: response.size,
-        matched_queried_buckets_count: response.compact.size,
+        queried_buckets_count: redis_response.size,
+        matched_queried_buckets_count: redis_response.compact.size,
         redis_query_time: ending - starting,
-        stats_per_record_type: generate_stats(response, records_types),
+        stats_per_record_type: generate_stats(redis_response, records_types),
         queried_buckets: buckets_to_query
     }
   end
@@ -67,7 +67,8 @@ class RollingWindow
   def get_buckets_with_type(time_since, user_id, record_types)
     time_buckets.find_since(time_since: time_since).each_with_object([]) do |window, bucket_with_type|
       record_types.each do |record_type|
-        bucket_with_type << [ redis_user_key_name(window, user_id, record_type), record_type ]
+        bucket_with_type << { redis_key_name: redis_user_key_name(window, user_id, record_type),
+                              record_type: record_type }
       end
     end
   end
