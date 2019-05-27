@@ -3,7 +3,7 @@ require_relative './time_buckets'
 class RollingWindow
   attr_reader :redis, :time_buckets, :time_now
 
-  def initialize(redis, time_span_windows)
+  def initialize(redis, time_span_windows = TimeBuckets::DEFAULT_TIME_SPAN_WINDOWS)
     @redis = redis
     @time_buckets = TimeBuckets.new(time_span_windows)
   end
@@ -69,6 +69,7 @@ class RollingWindow
   def get_redis_keys(time_since, user_id, pmta_record_types)
     init = { existing: [], expired: [] }
     time_buckets.find_since(time_since: time_since).each_with_object(init) do |window, redis_keys|
+      #puts "get_redis_keys #redis_keys #{redis_keys.fetch(:existing,[]).size}"
       key_category = window.fetch(:expire_at) > Time.now ? :existing : :expired
       redis_keys[key_category].concat(expand_redis_key_names(pmta_record_types, window, user_id))
     end
