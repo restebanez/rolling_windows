@@ -105,17 +105,20 @@ class TimeBuckets
   end
 
   def get_first_window(time_from, span:, expiration:)
+    window_starts = time_from.floor_to(span)
     {
-        window_starts: time_from.floor_to(span),
-        window_finishes: time_from.floor_to(span) + span,
+        window_starts: window_starts,
+        window_finishes: window_starts + span,
+        expire_at: window_starts + span + expiration,
         span: span
     }
   end
 
-  def next_window(window_starts:, window_finishes:, span:)
+  def next_window(window_starts:, window_finishes:, expire_at:, span:)
     {
         window_starts: window_starts + span,
         window_finishes: window_finishes + span,
+        expire_at: expire_at + span,
         span: span
     }
   end

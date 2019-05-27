@@ -2,6 +2,7 @@ require 'rubygems'
 require 'bundler'
 require "rspec/json_expectations"
 require_relative 'time_buckets'
+require 'pp'
 
 RSpec.describe TimeBuckets do
   context "using high precision span windows" do
@@ -34,32 +35,38 @@ RSpec.describe TimeBuckets do
       subject { time_buckets.find_in_range_sorted(time_from: time_from, time_to: time_to) }
 
       it 'returns the largest possible time span windows within the time range' do
-        expect(JSON.pretty_generate(subject)).to match_unordered_json(
+        expect(subject.size).to eq(5)
+        expect(subject).to include_json( # it also accepts a ruby hash
           [
             {
               "window_starts": "2011-04-10 23:58:58 +0100",
               "window_finishes": "2011-04-10 23:58:59 +0100",
-              "span": "1"
+              "expire_at": "2011-04-11 00:58:59 +0100",
+              "span": 1
             },
             {
               "window_starts": "2011-04-10 23:58:59 +0100",
               "window_finishes": "2011-04-10 23:59:00 +0100",
-              "span": "1"
+              "expire_at": "2011-04-11 00:59:00 +0100",
+              "span": 1
             },
             {
               "window_starts": "2011-04-10 23:59:00 +0100",
               "window_finishes": "2011-04-10 23:59:30 +0100",
-              "span": "30"
+              "expire_at": "2011-04-11 23:59:30 +0100",
+              "span": 30
             },
             {
               "window_starts": "2011-04-10 23:59:30 +0100",
               "window_finishes": "2011-04-10 23:59:40 +0100",
-              "span": "10"
+              "expire_at": "2011-04-11 04:59:40 +0100",
+              "span": 10
             },
             {
               "window_starts": "2011-04-10 23:59:40 +0100",
               "window_finishes": "2011-04-10 23:59:41 +0100",
-              "span": "1"
+              "expire_at": "2011-04-11 00:59:41 +0100",
+              "span": 1
             }
           ]
         )
