@@ -27,14 +27,12 @@ class RollingWindow
     }
   end
 
-  def incr_windows_counter(user_id: , record_type: ,time: Time.now, adjust_expiration: true)
+  def incr_windows_counter(user_id: , record_type: ,time: Time.now, never_expire: false)
     init_stats = { creation_time: time, keys: [], windows: [], sum: 0, all_users_sum: 0}
-    time_buckets.get_buckets_at(time).each_with_object(init_stats) do |window, stats|
-      expiration = window.fetch(:expiration)
-      expiration -= (Time.now - time) if adjust_expiration
-      raise(ArgumentError, "We can't set an already expired record: #{expiration}") if expiration <= 0
-      stats[:windows] << window.merge(expiration: expiration)
+    time_buckets.get_buckets_at(time, never_expire).each_with_object(init_stats) do |window, stats|
+      validate_expiration(window.fetch(:expire_at)) unless never_expire
       user_result = incr_window_counter(user_id: user_id, record_type: record_type, window: window)
+      stats[:windows] << window
       stats[:keys] << user_result
       stats[:sum] += user_result[:value]
       all_users_result = incr_window_counter(user_id: 'all', record_type: record_type, window: window)
@@ -44,6 +42,11 @@ class RollingWindow
 
   private
 
+  def validate_expiration(expire_at)
+    error_msg = "We can't set an already expired record: #{expire_at}"
+    raise(ArgumentError, error_msg) if Time.now > expire_at
+  end
+
   def generate_stats(response, records_types)
     response.zip(records_types).select{|response,_type| response}.each_with_object({}) do |(response, record_type), stats|
       stats[record_type] ||= 0
@@ -51,12 +54,13 @@ class RollingWindow
     end
   end
 
-  def incr_window_counter(user_id: , record_type:, window: )
+  def incr_window_counter(user_id:, record_type:, window: )
     user_key_name = redis_user_key_name(window, user_id, record_type)
+    expiration = Time.now - window.fetch(:expire_at)
     {
         name: user_key_name,
-        value: redis_incr(user_key_name, window.fetch(:expiration).to_i),
-        ex: window.fetch(:expiration).to_i
+        value: redis_incr(user_key_name, expiration.to_i),
+        ex: expiration.to_i
     }
   end
 
@@ -82,7 +86,11 @@ class RollingWindow
   end
 
   def lua_set_or_inc(seconds_to_expire)
-    "return redis.call('set',KEYS[1], 1,'EX', #{seconds_to_expire}, 'NX') or redis.call('incr', KEYS[1])"
+    if seconds_to_expire.to_i > 0
+      "return redis.call('set',KEYS[1], 1,'EX', #{seconds_to_expire}, 'NX') or redis.call('incr', KEYS[1])"
+    else
+      "return redis.call('incr', KEYS[1])"
+    end
   end
 end
 

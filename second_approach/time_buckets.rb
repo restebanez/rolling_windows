@@ -55,14 +55,15 @@ class TimeBuckets
     end
   end
 
-  def get_buckets_at(time)
+  # never_expire is useful for testing b/c it allows to set an arbitrary past window
+  def get_buckets_at(time, never_expire=false)
     time_span_windows.map do |bucket|
       window_starts = Time.at(time).floor_to(bucket[:span])
       {
           window_starts: window_starts,
           window_finishes: window_starts + bucket.fetch(:span),
           span: bucket.fetch(:span),
-          expiration: bucket.fetch(:expiration)
+          expire_at: never_expire ? -1 : (window_starts + bucket.fetch(:span) + bucket.fetch(:expiration))
       }
     end
   end

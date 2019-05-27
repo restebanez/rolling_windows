@@ -47,7 +47,7 @@ RSpec.describe "Rolling windows in Redis" do
     describe '#incr_counter in the past' do
       let(:user_id) { 2222 }
       let(:time) { Time.parse("2011-04-10 13:00:03 +01:00") }
-      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time, adjust_expiration: false) }
+      subject { rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: time, never_expire: true) }
 
       it 'creates as many user redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
@@ -73,9 +73,9 @@ RSpec.describe "Rolling windows in Redis" do
         let(:other_user_id) { 2342}
         let(:time_since) { 45.minutes.ago }
         before do
-          rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id, time: time_since + 1.second, adjust_expiration: false)
-          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
-          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, adjust_expiration: false)
+          rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id, time: time_since + 1.second, never_expire: true)
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
+          rolling_window.incr_windows_counter(record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
           rolling_window.incr_windows_counter(record_type: 'd', user_id: other_user_id)
           rolling_window.incr_windows_counter(record_type: 'f', user_id: other_user_id)
           rolling_window.incr_windows_counter(record_type: 'b', user_id: user_id)
