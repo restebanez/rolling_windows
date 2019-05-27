@@ -20,7 +20,7 @@ Benchmark.ips do |x|
     ROLLING_WINDOWS.incr_windows_counter(pmta_record_type: 'd', user_id: USER_ID)
   end
 
-  x.report("incr_windows_counter at random times")  do
+  x.report("incr_windows_counter at random times (no expiring records - only redis incr)")  do
     ROLLING_WINDOWS.incr_windows_counter(pmta_record_type: 'b', user_id: USER_ID, time: rand(ONE_DAY_AGO..TIME_NOW), never_expire: true)
   end
 
