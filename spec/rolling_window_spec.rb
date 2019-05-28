@@ -106,7 +106,7 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({"b"=>2, "d"=>2})
+            expect(subject[:stats_per_pmta_record_type]).to eq({:b=>2, :d=>2, :bounce_rate=>50.0,})
           end
 
           it 'required at least X number of windows' do
@@ -128,7 +128,7 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({"d"=>2})
+            expect(subject[:stats_per_pmta_record_type]).to eq({:d =>2, :bounce_rate=>0.0})
           end
         end
 
@@ -144,7 +144,7 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({"b"=>2, "d"=>3, "f"=>1})
+            expect(subject[:stats_per_pmta_record_type]).to eq({:b=>2, :bounce_rate=>40.0, :d=>3, :f=>1})
           end
         end
 

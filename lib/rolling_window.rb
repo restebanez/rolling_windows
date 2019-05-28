@@ -52,9 +52,22 @@ class RollingWindow
   end
 
   def generate_stats(response, records_types)
+    group_by_pmta_record_type(response, records_types).tap do |stats|
+      stats[:bounce_rate] = bounce_rate(stats.slice(:d,:b,:rb))
+    end
+  end
+
+  def bounce_rate(d: 0, b: 0, rb: 0)
+    actual_deliver = d - rb
+    actual_bounce = b + rb
+    total_emails = actual_deliver + actual_bounce
+    actual_bounce.to_f/total_emails * 100
+  end
+
+  def group_by_pmta_record_type(response, records_types)
     response.zip(records_types).select{|response,_type| response}.each_with_object({}) do |(response, pmta_record_type), stats|
-      stats[pmta_record_type] ||= 0
-      stats[pmta_record_type] += response.to_i
+      stats[pmta_record_type.to_sym] ||= 0
+      stats[pmta_record_type.to_sym] += response.to_i
     end
   end
 
