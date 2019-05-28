@@ -16,8 +16,8 @@ class RollingWindow
     buckets_to_query = buckets_with_type.map { |a| a.fetch(:redis_key_name) }
     records_types = buckets_with_type.map { |a| a.fetch(:pmta_record_type) }
     starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     redis_response = redis.mget(buckets_to_query)
+    ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     {
         pmta_record_types: pmta_record_types,
         sum: redis_response.map(&:to_i).sum,

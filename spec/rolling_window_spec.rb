@@ -2,6 +2,7 @@ require 'rubygems'
 require 'bundler'
 
 require 'redis'
+require 'pp'
 require_relative '../lib/rolling_window'
 
 $redis_store_obj = Redis.new
@@ -102,8 +103,8 @@ RSpec.describe "Rolling windows in Redis" do
             expect(subject[:queried_buckets_count]).to be > minimum_number_of_windows
           end
 
-          it 'perfoms in less than 10 microseconds' do
-            expect(subject[:redis_query_time]).to be < 10.0/1000000
+          it 'perfoms in less than 1 milliseconds' do
+            expect(subject[:redis_query_time]).to be < 1.0/1000
           end
         end
 

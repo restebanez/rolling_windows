@@ -26,6 +26,10 @@ class TimeBuckets
     @longest_time_window_span = time_span_windows.first[:span]
   end
 
+  def stat_max_number_of_buckets
+    time_span_windows.inject(0) {|count, bucket| bucket[:expiration] / bucket[:span] + count  }
+  end
+
   def find_in_range_sorted(*args)
     find_in_range(*args).sort_by { |w| w[:window_starts] }
   end
@@ -123,10 +127,6 @@ class TimeBuckets
         expire_at: expire_at + span,
         span: span
     }
-  end
-
-  def stat_max_number_of_buckets
-    time_span_windows.inject(0) {|count, bucket| bucket[:expiration] / bucket[:span] + count  }
   end
 end
 
