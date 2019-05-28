@@ -54,6 +54,7 @@ class RollingWindow
   def generate_stats(response, records_types)
     group_by_pmta_record_type(response, records_types).tap do |stats|
       stats[:bounce_rate] = bounce_rate(stats.slice(:d,:b,:rb))
+      stats[:complaint_rate] = complaint_rate(stats.slice(:d,:rb,:f))
     end
   end
 
@@ -62,6 +63,12 @@ class RollingWindow
     actual_bounce = b + rb
     total_emails = actual_deliver + actual_bounce
     actual_bounce.to_f/total_emails * 100
+  end
+
+  def complaint_rate(d: 0, rb: 0, f: 0)
+    actual_deliver = d - rb
+    total_emails = actual_deliver + f
+    f.to_f/total_emails * 100
   end
 
   def group_by_pmta_record_type(response, records_types)

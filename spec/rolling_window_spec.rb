@@ -104,9 +104,17 @@ RSpec.describe "Rolling windows in Redis" do
           it 'gets results from only three buckets' do
             expect(subject[:matched_queried_buckets_count]).to eq(3)
           end
-
+          
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({:b=>2, :d=>2, :bounce_rate=>50.0,})
+            expect(subject[:stats_per_pmta_record_type]).to include(:b=>2, :d=>2)
+          end
+
+          it 'reports bounce rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:bounce_rate=>50)
+          end
+
+          it 'reports complaint rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:complaint_rate=>0)
           end
 
           it 'required at least X number of windows' do
@@ -128,7 +136,15 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({:d =>2, :bounce_rate=>0.0})
+            expect(subject[:stats_per_pmta_record_type]).to include(:d =>2)
+          end
+
+          it 'reports bounce rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:bounce_rate=>0)
+          end
+
+          it 'reports complaint rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:complaint_rate=>0)
           end
         end
 
@@ -144,7 +160,15 @@ RSpec.describe "Rolling windows in Redis" do
           end
 
           it 'reports stats per record type' do
-            expect(subject[:stats_per_pmta_record_type]).to eq({:b=>2, :bounce_rate=>40.0, :d=>3, :f=>1})
+            expect(subject[:stats_per_pmta_record_type]).to include(:b=>2, :d=>3, :f=>1)
+          end
+
+          it 'reports bounce rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:bounce_rate=>40.0)
+          end
+
+          it 'reports complaint rates' do
+            expect(subject[:stats_per_pmta_record_type]).to include(:complaint_rate=>25.0)
           end
         end
 
