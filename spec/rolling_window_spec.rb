@@ -68,6 +68,18 @@ RSpec.describe "Rolling windows in Redis" do
       end
     end
 
+    context 'increments at the very end of a window size' do
+      let(:user_id) { 2223 }
+      let(:at_the_end_of_hour) { Time.parse("2019-05-25 13:59:59 +01:00") }
+      let(:at_the_begining_of_hour) { Time.parse("2019-05-25 14:00:00 +01:00") }
+      before { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: at_the_end_of_hour, never_expire: true) }
+      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: at_the_begining_of_hour, never_expire: true) }
+
+      it 'only writes to one window size at a time' do
+        expect(subject[:keys]).to all( include(:value => 1) )
+      end
+    end
+
     describe '#query_since' do
       context 'we collected a deliver 45 minutes ago ,half an hour ago, and just now' do
         let(:user_id) { 3333 }
