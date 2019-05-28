@@ -34,7 +34,7 @@ RSpec.describe "Rolling windows in Redis" do
 
     describe '#incr_counter current time' do
       let(:user_id) { 1111 }
-      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id) }
+      subject { rolling_window.increment(pmta_record_type: 'd', user_id: user_id) }
 
       it 'creates as many redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
@@ -48,7 +48,7 @@ RSpec.describe "Rolling windows in Redis" do
     describe '#incr_counter in the past' do
       let(:user_id) { 2222 }
       let(:time) { Time.parse("2011-04-10 13:00:03 +01:00") }
-      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: time, never_expire: true) }
+      subject { rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: time, never_expire: true) }
 
       it 'creates as many user redis keys as defined buckets' do
         expect(subject[:keys].size).to eq(high_precision_time_windows.size).and eq(redis.keys("at:*:for:*:#{user_id}:*").size)
@@ -72,8 +72,8 @@ RSpec.describe "Rolling windows in Redis" do
       let(:user_id) { 2223 }
       let(:at_the_end_of_hour) { Time.parse("2019-05-25 13:59:59 +01:00") }
       let(:at_the_begining_of_hour) { Time.parse("2019-05-25 14:00:00 +01:00") }
-      before { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: at_the_end_of_hour, never_expire: true) }
-      subject { rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: at_the_begining_of_hour, never_expire: true) }
+      before { rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: at_the_end_of_hour, never_expire: true) }
+      subject { rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: at_the_begining_of_hour, never_expire: true) }
 
       it 'only writes to one window size at a time' do
         expect(subject[:keys]).to all( include(:value => 1) )
@@ -86,12 +86,12 @@ RSpec.describe "Rolling windows in Redis" do
         let(:other_user_id) { 2342}
         let(:time_since) { 45.minutes.ago }
         before do
-          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id, time: time_since + 1.second, never_expire: true)
-          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
-          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
-          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: other_user_id)
-          rolling_window.incr_windows_counter(pmta_record_type: 'f', user_id: other_user_id)
-          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id)
+          rolling_window.increment(pmta_record_type: 'b', user_id: user_id, time: time_since + 1.second, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: 30.minutes.ago, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'd', user_id: other_user_id)
+          rolling_window.increment(pmta_record_type: 'f', user_id: other_user_id)
+          rolling_window.increment(pmta_record_type: 'b', user_id: user_id)
         end
 
         context 'query a user' do
@@ -104,7 +104,7 @@ RSpec.describe "Rolling windows in Redis" do
           it 'gets results from only three buckets' do
             expect(subject[:matched_queried_buckets_count]).to eq(3)
           end
-          
+
           it 'reports stats per record type' do
             expect(subject[:stats_per_pmta_record_type]).to include(:b=>2, :d=>2)
           end
@@ -179,9 +179,9 @@ RSpec.describe "Rolling windows in Redis" do
         let(:expired_time) { 2.days.ago }
         before do
           # The never_expire allows you to write the record
-          rolling_window.incr_windows_counter(pmta_record_type: 'b', user_id: user_id, time: expired_time + 1.second, never_expire: true)
-          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: expired_time + 15.minutes, never_expire: true)
-          rolling_window.incr_windows_counter(pmta_record_type: 'd', user_id: user_id, time: expired_time + 30.minutes, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'b', user_id: user_id, time: expired_time + 1.second, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: expired_time + 15.minutes, never_expire: true)
+          rolling_window.increment(pmta_record_type: 'd', user_id: user_id, time: expired_time + 30.minutes, never_expire: true)
         end
 
         context 'query a user' do

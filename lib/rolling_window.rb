@@ -31,7 +31,7 @@ class RollingWindow
     }
   end
 
-  def incr_windows_counter(user_id: , pmta_record_type: ,time: Time.now, never_expire: false)
+  def increment(user_id: , pmta_record_type: , time: Time.now, never_expire: false)
     init_stats = { creation_time: time, keys: [], windows: [], sum: 0, all_users_sum: 0}
     time_buckets.get_buckets_at(time, never_expire).each_with_object(init_stats) do |window, stats|
       validate_expiration(window.fetch(:expire_at)) unless never_expire

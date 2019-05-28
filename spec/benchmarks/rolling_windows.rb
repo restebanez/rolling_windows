@@ -16,12 +16,12 @@ Benchmark.ips do |x|
   # Configure the number of seconds used during
   # the warmup phase (default 2) and calculation phase (default 5)
   x.config(:time => 5, :warmup => 2)
-  x.report("incr_windows_counter") do
-    ROLLING_WINDOWS.incr_windows_counter(pmta_record_type: 'd', user_id: USER_ID)
+  x.report("increment") do
+    ROLLING_WINDOWS.increment(pmta_record_type: 'd', user_id: USER_ID)
   end
 
-  x.report("incr_windows_counter at random times (no expiring records - only redis incr)")  do
-    ROLLING_WINDOWS.incr_windows_counter(pmta_record_type: 'b', user_id: USER_ID, time: rand(ONE_DAY_AGO..TIME_NOW), never_expire: true)
+  x.report("increment at random times (no expiring records - only redis incr)")  do
+    ROLLING_WINDOWS.increment(pmta_record_type: 'b', user_id: USER_ID, time: rand(ONE_DAY_AGO..TIME_NOW), never_expire: true)
   end
 
   x.report("#query_since, one user, 5 minutes ago, all pmta records") do
@@ -46,8 +46,8 @@ Benchmark.ips do |x|
 end
 
 # Calculating -------------------------------------
-# incr_windows_counter      1.216k (± 2.5%) i/s -      6.102k in   5.022176s
-# incr_windows_counter at random times (no expiring records - only redis incr)
+# increment      1.216k (± 2.5%) i/s -      6.102k in   5.022176s
+# increment at random times (no expiring records - only redis incr)
 #                           1.438k (± 1.7%) i/s -      7.191k in   5.002065s
 # #query_since, one user, 5 minutes ago, all pmta records
 #                           2.771k (± 3.3%) i/s -     13.932k in   5.032991s
