@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'bundler'
 require "rspec/json_expectations"
-require_relative 'time_buckets'
+require_relative '../lib/time_buckets'
 require 'pp'
 
 RSpec.describe TimeBuckets do

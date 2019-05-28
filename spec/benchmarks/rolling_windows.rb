@@ -4,7 +4,7 @@ require 'bundler'
 require 'benchmark/ips'
 
 require 'redis'
-require_relative '../rolling_window'
+require_relative '../../lib/rolling_window'
 REDIS = Redis.new
 REDIS.flushall
 ROLLING_WINDOWS = RollingWindow.new(REDIS)

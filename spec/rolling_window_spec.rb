@@ -2,7 +2,7 @@ require 'rubygems'
 require 'bundler'
 
 require 'redis'
-require_relative 'rolling_window'
+require_relative '../lib/rolling_window'
 
 $redis_store_obj = Redis.new
 
